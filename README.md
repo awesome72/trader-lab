@@ -97,6 +97,7 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project Settings → API Keys | publishable/anon 키 (브라우저 노출 가능) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API Keys | **서버 전용.** secret/service_role 키 |
 | `DATABASE_URL` | Project Settings → Database → Connect → ORM → Drizzle | 비밀번호의 특수문자는 URL 인코딩 필요(예: `@` → `%40`) |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) | **서버 전용.** `/api/ai/coach`(AI 소크라테스 코치, Phase 8)에서만 사용 |
 
 또한 Supabase 대시보드 **Authentication → URL Configuration → Redirect URLs**에 아래를 추가해야 매직 링크 로그인이 동작합니다:
 
@@ -160,7 +161,7 @@ npm run dev
 - [x] **Phase 5** — M4 행동 편향 탐지기 + M6 반사실 시뮬레이터
 - [x] **Phase 6** — M7 블라인드 바 리플레이
 - [x] **Phase 7** — M9 노코드 룰 백테스터
-- [ ] **Phase 8** — M10 AI 소크라테스 코치
+- [x] **Phase 8** — M10 AI 소크라테스 코치
 - [ ] **Phase 9** — M5 캘리브레이션 · M8 드릴 · M11 SRS · M12 몬테카를로 리스크랩
 - [ ] **Phase 10** — 통합 · 온보딩 · 데이터 수집기
 

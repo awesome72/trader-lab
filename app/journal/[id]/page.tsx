@@ -22,6 +22,7 @@ import {
 } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { CoachPanel } from "@/app/coach/coach-panel";
 
 function pct(from: number, to: number): string {
   return `${(((to - from) / from) * 100).toFixed(1)}%`;
@@ -261,6 +262,19 @@ export default async function JournalDetailPage({
               </div>
             ))
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>AI 코치</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CoachPanel
+            kind={isClosed ? "postmortem" : "premortem"}
+            tradeId={id}
+            triggerLabel={isClosed ? "AI 포스트모템 요청" : "AI 프리모템 요청"}
+          />
         </CardContent>
       </Card>
     </div>
