@@ -49,7 +49,13 @@ export function expectancyOf(rs: number[]): number {
 
 export function calcMetrics(trades: Trade[]): MetricsResult {
   const closed = closedRs(trades);
-  const rs = closed.map((c) => c.r);
+  return calcMetricsFromRs(closed.map((c) => c.r));
+}
+
+// Same aggregation as calcMetrics, but for callers that already have a plain
+// R-multiple array in chronological order (e.g. lib/domain/backtest.ts,
+// which has no Trade objects — just simulated fills).
+export function calcMetricsFromRs(rs: number[]): MetricsResult {
   const n = rs.length;
 
   const wins = rs.filter((r) => r > 0);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcSMA, selectReplayStart } from "./replay";
+import { selectReplayStart } from "./replay";
 
 describe("selectReplayStart", () => {
   it("only considers candidates with enough bars available", () => {
@@ -41,24 +41,5 @@ describe("selectReplayStart", () => {
       [1, 2, 3, 4, 5, 6, 7, 8].map((seed) => selectReplayStart(candidates, seed)?.ticker)
     );
     expect(picks.size).toBeGreaterThan(1);
-  });
-});
-
-describe("calcSMA", () => {
-  it("returns null until enough values accumulate, then the rolling average", () => {
-    const closes = [10, 20, 30, 40, 50];
-    expect(calcSMA(closes, 3)).toEqual([null, null, 20, 30, 40]);
-  });
-
-  it("returns all values unchanged as a period-1 average", () => {
-    expect(calcSMA([1, 2, 3], 1)).toEqual([1, 2, 3]);
-  });
-
-  it("returns all nulls when period exceeds the input length", () => {
-    expect(calcSMA([1, 2], 5)).toEqual([null, null]);
-  });
-
-  it("returns an empty array for empty input", () => {
-    expect(calcSMA([], 5)).toEqual([]);
   });
 });

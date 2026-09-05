@@ -1,0 +1,126 @@
+import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { backtestRuns, investorFlow, ohlcvDaily, ruleSets, tickerMaster } from "@/lib/db/schema";
+import type { TickerUniverseEntry } from "@/lib/domain/backtest";
+import type { RuleDefinition } from "@/lib/domain/rule-dsl";
+
+export interface UniverseFilters {
+  market?: string;
+  minMarketCap?: number;
+  maxMarketCap?: number;
+  tickers?: string[];
+}
+
+export async function getUniverseBars(filters: UniverseFilters): Promise<TickerUniverseEntry[]> {
+  const conditions = [];
+  if (filters.market) conditions.push(eq(tickerMaster.market, filters.market));
+  if (filters.minMarketCap !== undefined) conditions.push(gte(tickerMaster.marketCap, filters.minMarketCap));
+  if (filters.maxMarketCap !== undefined) conditions.push(lte(tickerMaster.marketCap, filters.maxMarketCap));
+  if (filters.tickers && filters.tickers.length > 0) {
+    conditions.push(sql`${tickerMaster.ticker} = ANY(${filters.tickers})`);
+  }
+
+  const tickers = await db
+    .select()
+    .from(tickerMaster)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+  const entries: TickerUniverseEntry[] = [];
+  for (const t of tickers) {
+    const rows = await db
+      .select()
+      .from(ohlcvDaily)
+      .where(eq(ohlcvDaily.ticker, t.ticker))
+      .orderBy(asc(ohlcvDaily.d));
+    if (rows.length === 0) continue;
+
+    const flowRows = await db
+      .select()
+      .from(investorFlow)
+      .where(eq(investorFlow.ticker, t.ticker))
+      .orderBy(asc(investorFlow.d));
+    const flowByDate = new Map(flowRows.map((f) => [f.d, f.foreignNet ?? 0]));
+
+    entries.push({
+      ticker: t.ticker,
+      marketCap: t.marketCap,
+      delistedAt: t.delistedAt,
+      dates: rows.map((r) => r.d),
+      open: rows.map((r) => r.open ?? 0),
+      high: rows.map((r) => r.high ?? 0),
+      low: rows.map((r) => r.low ?? 0),
+      close: rows.map((r) => r.close ?? 0),
+      volume: rows.map((r) => r.volume ?? 0),
+      foreignNet: rows.map((r) => flowByDate.get(r.d) ?? 0),
+    });
+  }
+
+  return entries;
+}
+
+export interface RunRecordInput {
+  userId: string;
+  ruleSetId?: string;
+  name: string;
+  definition: RuleDefinition;
+}
+
+export interface RuleSetRunInfo {
+  ruleSetId: string;
+  searchCount: number;
+}
+
+// Every *run* against a rule_set counts toward its search_count, per
+// docs/SPEC.md Phase 7-4-2 (multiple-testing warning) — not just saves.
+export async function recordRuleSetRun(input: RunRecordInput): Promise<RuleSetRunInfo> {
+  if (input.ruleSetId) {
+    const [existing] = await db
+      .select()
+      .from(ruleSets)
+      .where(and(eq(ruleSets.id, input.ruleSetId), eq(ruleSets.userId, input.userId)));
+
+    if (existing) {
+      const nextCount = (existing.searchCount ?? 0) + 1;
+      await db
+        .update(ruleSets)
+        .set({
+          definition: input.definition,
+          name: input.name,
+          version: (existing.version ?? 1) + 1,
+          searchCount: nextCount,
+        })
+        .where(eq(ruleSets.id, input.ruleSetId));
+      return { ruleSetId: input.ruleSetId, searchCount: nextCount };
+    }
+  }
+
+  const [created] = await db
+    .insert(ruleSets)
+    .values({
+      userId: input.userId,
+      name: input.name,
+      definition: input.definition,
+      version: 1,
+      searchCount: 1,
+    })
+    .returning({ id: ruleSets.id });
+
+  return { ruleSetId: created.id, searchCount: 1 };
+}
+
+export async function saveBacktestRun(
+  ruleSetId: string,
+  periodStart: string,
+  periodEnd: string,
+  metrics: unknown,
+  equityCurve: unknown
+): Promise<void> {
+  await db.insert(backtestRuns).values({
+    ruleSetId,
+    periodStart,
+    periodEnd,
+    isOutOfSample: false,
+    metrics,
+    equityCurve,
+  });
+}

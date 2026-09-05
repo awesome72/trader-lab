@@ -3,6 +3,7 @@ import {
   bootstrapCI,
   calcCumulativeRCurve,
   calcMetrics,
+  calcMetricsFromRs,
   calcRHistogram,
   expectancyOf,
   pearsonCorrelation,
@@ -237,5 +238,24 @@ describe("pearsonCorrelation", () => {
 
   it("returns null when one series has zero variance (division-by-zero guard)", () => {
     expect(pearsonCorrelation([1, 1, 1], [1, 2, 3])).toBeNull();
+  });
+});
+
+describe("calcMetricsFromRs", () => {
+  it("matches calcMetrics on the same underlying R values (shared aggregation)", () => {
+    const trades = [
+      makeClosedTrade(2, "2026-01-01"),
+      makeClosedTrade(-1, "2026-01-02"),
+      makeClosedTrade(3, "2026-01-03"),
+    ];
+    const fromTrades = calcMetrics(trades);
+    const fromRs = calcMetricsFromRs([2, -1, 3]);
+    expect(fromRs).toEqual(fromTrades);
+  });
+
+  it("returns a zeroed, non-throwing result for an empty array", () => {
+    const result = calcMetricsFromRs([]);
+    expect(result.n).toBe(0);
+    expect(result.insufficientSample).toBe(true);
   });
 });

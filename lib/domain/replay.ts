@@ -36,24 +36,3 @@ export function selectReplayStart(
   const index = Math.floor(rand() * eligible.length);
   return eligible[Math.min(index, eligible.length - 1)];
 }
-
-/**
- * Simple moving average over `period` values, aligned to the input array
- * (nulls where fewer than `period` values are available yet). Used for the
- * replay chart's MA(5)/MA(20) overlay — computed only from bars already
- * revealed to the client, never from future closes.
- */
-export function calcSMA(closes: number[], period: number): (number | null)[] {
-  if (period <= 0) return closes.map(() => null);
-
-  const result: (number | null)[] = [];
-  let windowSum = 0;
-
-  for (let i = 0; i < closes.length; i++) {
-    windowSum += closes[i];
-    if (i >= period) windowSum -= closes[i - period];
-    result.push(i >= period - 1 ? windowSum / period : null);
-  }
-
-  return result;
-}
