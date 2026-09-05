@@ -1,4 +1,5 @@
 // Korean display labels for domain enums. UI-only, not calculation logic.
+import type { CounterfactualScenario } from "@/lib/domain/counterfactual";
 import type {
   ExitReason,
   HorizonType,
@@ -58,6 +59,16 @@ export const EMOTION_TAGS: { value: string; label: string }[] = [
 export const EMOTION_LABELS: Record<string, string> = Object.fromEntries(
   EMOTION_TAGS.map((t) => [t.value, t.label])
 );
+
+export const COUNTERFACTUAL_SCENARIO_LABELS: Record<CounterfactualScenario, string> = {
+  actual: "실제",
+  stopDiscipline: "손절 준수",
+  targetDiscipline: "익절 준수",
+  noAveraging: "물타기 없음",
+  processFilter70: "프로세스 70+ 필터",
+  noFomo: "FOMO 없음",
+  topHalfConfidence: "확신도 상위 50%",
+};
 
 export const INVALIDATION_PLACEHOLDERS = [
   "종가가 20일 이동평균선 아래로 마감하면",

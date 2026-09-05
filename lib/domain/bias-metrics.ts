@@ -200,6 +200,163 @@ export function calcFomoStats(
   return { rate, winRate, avgR };
 }
 
+export interface BiasEvidence {
+  trades: Trade[];
+  // Always <= 0: R actually forfeited/lost to this bias, across all axes.
+  estimatedLossR: number;
+}
+
+/**
+ * Trades where a real gain opportunity (mfeR) was given back before exit, or
+ * a real loss opportunity (maeR <= -1) was held to worse than a disciplined
+ * -1R stop-out — the two disposition-effect failure modes. estimatedLossR
+ * sums the R actually forfeited in each case (as a negative number).
+ */
+export function findDispositionEvidence(trades: Trade[]): BiasEvidence {
+  const flagged = trades.filter((t) => {
+    if (t.realizedR === null) return false;
+    const gainGivenBack = t.mfeR !== null && t.mfeR - t.realizedR >= 1;
+    const lossHeldPastStop = t.maeR !== null && t.maeR <= -1 && t.realizedR < -1;
+    return gainGivenBack || lossHeldPastStop;
+  });
+
+  const estimatedLossR = flagged.reduce((sum, t) => {
+    const realizedR = t.realizedR as number;
+    const gainGap = t.mfeR !== null ? Math.max(0, t.mfeR - realizedR) : 0;
+    const lossGap =
+      t.maeR !== null && t.maeR <= -1 && realizedR < -1 ? Math.abs(realizedR - -1) : 0;
+    return sum - (gainGap + lossGap);
+  }, 0);
+
+  return { trades: flagged, estimatedLossR };
+}
+
+export function findRevengeTradingEvidence(
+  trades: Trade[],
+  windowMinutes = 60
+): BiasEvidence {
+  const closed = trades
+    .filter((t) => t.entryAt !== null && t.exitAt !== null)
+    .sort((a, b) => (a.entryAt as string).localeCompare(b.entryAt as string));
+
+  const flagged: Trade[] = [];
+  for (let i = 1; i < closed.length; i++) {
+    const prev = closed[i - 1];
+    const curr = closed[i];
+    const gapMinutes =
+      (new Date(curr.entryAt as string).getTime() -
+        new Date(prev.exitAt as string).getTime()) /
+      MS_PER_MINUTE;
+    if ((prev.realizedR ?? 0) < 0 && gapMinutes >= 0 && gapMinutes <= windowMinutes) {
+      flagged.push(curr);
+    }
+  }
+
+  const estimatedLossR = flagged.reduce(
+    (sum, t) => sum + Math.min(0, t.realizedR ?? 0),
+    0
+  );
+  return { trades: flagged, estimatedLossR };
+}
+
+/**
+ * Flags trades in any calendar month where trade count was at/above the
+ * trader's own median monthly count AND that month's total R was negative —
+ * i.e. months where trading more coincided with losing more.
+ */
+export function findOvertradingEvidence(trades: Trade[]): BiasEvidence {
+  const closed = trades.filter((t) => t.realizedR !== null && (t.entryAt ?? t.exitAt));
+
+  const byMonth = new Map<string, Trade[]>();
+  for (const t of closed) {
+    const month = (t.entryAt ?? t.exitAt) as string;
+    const key = month.slice(0, 7);
+    const bucket = byMonth.get(key) ?? [];
+    bucket.push(t);
+    byMonth.set(key, bucket);
+  }
+
+  const counts = Array.from(byMonth.values())
+    .map((bucket) => bucket.length)
+    .sort((a, b) => a - b);
+  const medianCount =
+    counts.length > 0 ? counts[Math.floor((counts.length - 1) / 2)] : 0;
+
+  const flagged: Trade[] = [];
+  for (const bucket of byMonth.values()) {
+    const sumR = bucket.reduce((s, t) => s + (t.realizedR as number), 0);
+    if (bucket.length >= medianCount && sumR < 0) {
+      flagged.push(...bucket);
+    }
+  }
+
+  const estimatedLossR = flagged.reduce(
+    (sum, t) => sum + Math.min(0, t.realizedR ?? 0),
+    0
+  );
+  return { trades: flagged, estimatedLossR };
+}
+
+export function findAveragingDownEvidence(
+  trades: Trade[],
+  events: TradeEvent[]
+): BiasEvidence {
+  const flagged = trades.filter((t) => events.some((e) => isLosingAdd(t, e)));
+  const estimatedLossR = flagged.reduce(
+    (sum, t) => sum + Math.min(0, (t.realizedR as number) - -1),
+    0
+  );
+  return { trades: flagged, estimatedLossR };
+}
+
+export function findStopDelayEvidence(
+  trades: Trade[],
+  events: TradeEvent[]
+): BiasEvidence {
+  void events;
+  const flagged = trades.filter(
+    (t) =>
+      t.maeR !== null &&
+      t.maeR <= -1 &&
+      t.exitReason !== "stop" &&
+      t.realizedR !== null
+  );
+  const estimatedLossR = flagged.reduce(
+    (sum, t) => sum + Math.min(0, (t.realizedR as number) - -1),
+    0
+  );
+  return { trades: flagged, estimatedLossR };
+}
+
+export function findFomoEvidence(
+  trades: Trade[],
+  priceContext: FomoPriceContext[]
+): BiasEvidence {
+  const contextByTradeId = new Map(
+    priceContext.map((c) => [c.tradeId, c.dayChangePctAtEntry])
+  );
+  const flagged = trades.filter((t) => (contextByTradeId.get(t.id) ?? -Infinity) >= 5);
+  const estimatedLossR = flagged.reduce(
+    (sum, t) => sum + Math.min(0, t.realizedR ?? 0),
+    0
+  );
+  return { trades: flagged, estimatedLossR };
+}
+
+/**
+ * Stopgap for calcFomoStats/findFomoEvidence until a real intraday OHLC feed
+ * exists (see docs/SPEC.md Phase 10): treats the trader's own self-declared
+ * "fomo" emotion tag (set at entry, pre-committed) as if that day's move had
+ * been >= 5%, and everything else as 0%. Same trade-off already made for
+ * scoreEmotion() in process-score.ts and the noFomo counterfactual scenario.
+ */
+export function deriveFomoPriceContextFromTags(trades: Trade[]): FomoPriceContext[] {
+  return trades.map((t) => ({
+    tradeId: t.id,
+    dayChangePctAtEntry: t.emotionTags.includes("fomo") ? 5 : 0,
+  }));
+}
+
 export interface BiasRadar {
   disposition: number;
   revengeTrading: number;

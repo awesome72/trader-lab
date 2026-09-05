@@ -1,8 +1,8 @@
-import { and, eq, gte, type SQL } from "drizzle-orm";
+import { and, eq, gte, inArray, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { dbTradeToDomain } from "@/lib/db/mappers";
-import { trades } from "@/lib/db/schema";
-import type { SourceType, Trade } from "@/lib/domain/types";
+import { dbTradeEventToDomain, dbTradeToDomain } from "@/lib/db/mappers";
+import { tradeEvents, trades } from "@/lib/db/schema";
+import type { SourceType, Trade, TradeEvent } from "@/lib/domain/types";
 
 export const PERIOD_DAYS: Record<string, number> = {
   "1M": 30,
@@ -54,4 +54,22 @@ export async function getTradesBetween(
   return rows
     .map(dbTradeToDomain)
     .filter((t) => t.entryAt !== null && new Date(t.entryAt) < to);
+}
+
+// Joins through trades to enforce ownership (tradeEvents has no userId column
+// of its own; Drizzle bypasses RLS, so this join is the actual security
+// boundary here — see lib/db/index.ts).
+export async function getEventsForTrades(
+  userId: string,
+  tradeIds: string[]
+): Promise<TradeEvent[]> {
+  if (tradeIds.length === 0) return [];
+
+  const rows = await db
+    .select({ event: tradeEvents })
+    .from(tradeEvents)
+    .innerJoin(trades, eq(tradeEvents.tradeId, trades.id))
+    .where(and(eq(trades.userId, userId), inArray(tradeEvents.tradeId, tradeIds)));
+
+  return rows.map((r) => dbTradeEventToDomain(r.event));
 }

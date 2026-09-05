@@ -7,6 +7,13 @@ import {
   calcOvertradingSlope,
   calcRevengeTradingRate,
   calcStopDelayHours,
+  deriveFomoPriceContextFromTags,
+  findAveragingDownEvidence,
+  findDispositionEvidence,
+  findFomoEvidence,
+  findOvertradingEvidence,
+  findRevengeTradingEvidence,
+  findStopDelayEvidence,
 } from "./bias-metrics";
 import type { Trade, TradeEvent } from "./types";
 
@@ -201,6 +208,112 @@ describe("calcFomoStats", () => {
     expect(result.rate).toBe(0.5);
     expect(result.winRate).toBe(0);
     expect(result.avgR).toBe(-1);
+  });
+});
+
+describe("findDispositionEvidence", () => {
+  it("flags a gain given back and sums the R left on the table", () => {
+    const trade = makeTrade({ id: "t1", mfeR: 2, realizedR: 0.5 });
+    const result = findDispositionEvidence([trade]);
+    expect(result.trades.map((t) => t.id)).toEqual(["t1"]);
+    expect(result.estimatedLossR).toBeCloseTo(-1.5, 6);
+  });
+
+  it("flags a loss held past a disciplined -1R stop", () => {
+    const trade = makeTrade({ id: "t1", maeR: -2, realizedR: -2, mfeR: -2 });
+    const result = findDispositionEvidence([trade]);
+    expect(result.trades.map((t) => t.id)).toEqual(["t1"]);
+    expect(result.estimatedLossR).toBeCloseTo(-1, 6);
+  });
+
+  it("does not flag a clean trade", () => {
+    const trade = makeTrade({ id: "t1", mfeR: 1.1, realizedR: 1, maeR: -0.2 });
+    expect(findDispositionEvidence([trade])).toEqual({ trades: [], estimatedLossR: 0 });
+  });
+});
+
+describe("findRevengeTradingEvidence", () => {
+  it("flags the re-entry after a loss and sums its negative R", () => {
+    const trades = [
+      makeTrade({
+        id: "t1",
+        entryAt: "2026-01-01T09:00:00.000Z",
+        exitAt: "2026-01-01T10:00:00.000Z",
+        realizedR: -1,
+      }),
+      makeTrade({
+        id: "t2",
+        entryAt: "2026-01-01T10:20:00.000Z",
+        exitAt: "2026-01-01T11:00:00.000Z",
+        realizedR: -0.5,
+      }),
+    ];
+    const result = findRevengeTradingEvidence(trades, 60);
+    expect(result.trades.map((t) => t.id)).toEqual(["t2"]);
+    expect(result.estimatedLossR).toBeCloseTo(-0.5, 6);
+  });
+});
+
+describe("findOvertradingEvidence", () => {
+  it("flags trades in a high-count, net-negative month", () => {
+    const trades = [
+      makeTrade({ id: "a1", entryAt: "2026-01-05T00:00:00.000Z", realizedR: 2 }),
+      makeTrade({ id: "b1", entryAt: "2026-02-01T00:00:00.000Z", realizedR: 1 }),
+      makeTrade({ id: "b2", entryAt: "2026-02-05T00:00:00.000Z", realizedR: -1 }),
+      makeTrade({ id: "b3", entryAt: "2026-02-10T00:00:00.000Z", realizedR: -2 }),
+      makeTrade({ id: "b4", entryAt: "2026-02-15T00:00:00.000Z", realizedR: -1 }),
+    ];
+    const result = findOvertradingEvidence(trades);
+    expect(result.trades.map((t) => t.id).sort()).toEqual(["b1", "b2", "b3", "b4"]);
+    expect(result.estimatedLossR).toBe(-4);
+  });
+});
+
+describe("findAveragingDownEvidence", () => {
+  it("flags a trade with a losing add and estimates loss beyond a disciplined -1R", () => {
+    const trade = makeTrade({ id: "t1", direction: "long", entryPrice: 100, realizedR: -2.5 });
+    const events = [makeEvent({ tradeId: "t1", kind: "add_position", payload: { price: 95 } })];
+    const result = findAveragingDownEvidence([trade], events);
+    expect(result.trades.map((t) => t.id)).toEqual(["t1"]);
+    expect(result.estimatedLossR).toBeCloseTo(-1.5, 6);
+  });
+});
+
+describe("findStopDelayEvidence", () => {
+  it("flags a breached-and-held trade and estimates loss beyond a disciplined -1R", () => {
+    const trade = makeTrade({ id: "t1", maeR: -1.5, exitReason: "discretionary", realizedR: -1.8 });
+    const result = findStopDelayEvidence([trade], []);
+    expect(result.trades.map((t) => t.id)).toEqual(["t1"]);
+    expect(result.estimatedLossR).toBeCloseTo(-0.8, 6);
+  });
+});
+
+describe("findFomoEvidence", () => {
+  it("flags trades chasing a >=5% day move and sums their negative R", () => {
+    const trades = [
+      makeTrade({ id: "t1", realizedR: -1 }),
+      makeTrade({ id: "t2", realizedR: 2 }),
+    ];
+    const priceContext = [
+      { tradeId: "t1", dayChangePctAtEntry: 6 },
+      { tradeId: "t2", dayChangePctAtEntry: 1 },
+    ];
+    const result = findFomoEvidence(trades, priceContext);
+    expect(result.trades.map((t) => t.id)).toEqual(["t1"]);
+    expect(result.estimatedLossR).toBe(-1);
+  });
+});
+
+describe("deriveFomoPriceContextFromTags", () => {
+  it("maps the self-declared fomo tag to a >=5% day-change proxy", () => {
+    const trades = [
+      makeTrade({ id: "t1", emotionTags: ["fomo"] }),
+      makeTrade({ id: "t2", emotionTags: [] }),
+    ];
+    expect(deriveFomoPriceContextFromTags(trades)).toEqual([
+      { tradeId: "t1", dayChangePctAtEntry: 5 },
+      { tradeId: "t2", dayChangePctAtEntry: 0 },
+    ]);
   });
 });
 
