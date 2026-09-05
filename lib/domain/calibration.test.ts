@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { brierScore, bucketize, calibrationError } from "./calibration";
+import {
+  brierScore,
+  bucketize,
+  calcBrierTrend,
+  calibrationError,
+  diagnoseCalibration,
+  hasCalibrationBadge,
+} from "./calibration";
 import type { CalibrationRecord } from "./calibration";
 
 function makeRecord(
@@ -91,5 +98,85 @@ describe("calibrationError", () => {
 
   it("returns null for an empty record set", () => {
     expect(calibrationError([])).toBeNull();
+  });
+});
+
+describe("diagnoseCalibration", () => {
+  function bucket(bucketStart: number, predicted: number, actual: number, count: number) {
+    return { bucketStart, bucketEnd: bucketStart + 10, predicted, actual, count };
+  }
+
+  it("flags overconfidence when high-confidence actual hit rate trails declared by 15pp+", () => {
+    const buckets = [bucket(70, 75, 50, 20)];
+    expect(diagnoseCalibration(buckets)).toBe("overconfident");
+  });
+
+  it("flags underconfidence when actual beats declared by 15pp+", () => {
+    const buckets = [bucket(70, 75, 95, 20)];
+    expect(diagnoseCalibration(buckets)).toBe("underconfident");
+  });
+
+  it("calls it well-calibrated within a 5pp gap", () => {
+    const buckets = [bucket(70, 75, 72, 20)];
+    expect(diagnoseCalibration(buckets)).toBe("well_calibrated");
+  });
+
+  it("returns null in the 5-15pp gray zone", () => {
+    const buckets = [bucket(70, 75, 65, 20)];
+    expect(diagnoseCalibration(buckets)).toBeNull();
+  });
+
+  it("ignores buckets below 70% confidence", () => {
+    const buckets = [bucket(30, 30, 90, 20)];
+    expect(diagnoseCalibration(buckets)).toBeNull();
+  });
+
+  it("returns null when there's no high-confidence data yet", () => {
+    expect(diagnoseCalibration([])).toBeNull();
+  });
+});
+
+describe("calcBrierTrend", () => {
+  it("computes a rolling Brier score in chronological order", () => {
+    const records = [
+      makeRecord(0.9, false, { resolvedAt: "2026-01-03T00:00:00.000Z" }),
+      makeRecord(0.9, true, { resolvedAt: "2026-01-01T00:00:00.000Z" }),
+      makeRecord(0.9, true, { resolvedAt: "2026-01-02T00:00:00.000Z" }),
+    ];
+    const trend = calcBrierTrend(records, 10);
+    expect(trend.map((p) => p.at)).toEqual([
+      "2026-01-01T00:00:00.000Z",
+      "2026-01-02T00:00:00.000Z",
+      "2026-01-03T00:00:00.000Z",
+    ]);
+    // last point's rolling window includes all 3: two hits (0.01 sq err each) + one miss (0.81)
+    expect(trend[2].rollingBrier).toBeCloseTo((0.01 + 0.01 + 0.81) / 3, 6);
+  });
+
+  it("returns an empty array with no resolved records", () => {
+    expect(calcBrierTrend([makeRecord(0.5, null)])).toEqual([]);
+  });
+});
+
+describe("hasCalibrationBadge", () => {
+  it("awards the badge with >=30 resolved predictions and Brier < 0.18", () => {
+    const records = Array.from({ length: 30 }, (_, i) =>
+      makeRecord(0.9, true, { resolvedAt: `2026-01-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z` })
+    );
+    expect(hasCalibrationBadge(records)).toBe(true);
+  });
+
+  it("withholds the badge under 30 resolved predictions even if perfectly calibrated", () => {
+    const records = Array.from({ length: 29 }, (_, i) =>
+      makeRecord(0.9, true, { resolvedAt: `2026-01-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z` })
+    );
+    expect(hasCalibrationBadge(records)).toBe(false);
+  });
+
+  it("withholds the badge when recent Brier is at/above 0.18", () => {
+    const records = Array.from({ length: 30 }, (_, i) =>
+      makeRecord(0.6, i < 15, { resolvedAt: `2026-01-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z` })
+    );
+    expect(hasCalibrationBadge(records)).toBe(false);
   });
 });

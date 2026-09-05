@@ -82,3 +82,64 @@ export function calibrationError(
     return sum + gap * weight;
   }, 0);
 }
+
+// Brier score of a trader who always guesses 50% is exactly 0.25 regardless
+// of outcomes ((0.5-0)^2 = (0.5-1)^2 = 0.25) — the "coin flip" reference line.
+export const COIN_FLIP_BRIER_SCORE = 0.25;
+
+export type CalibrationDiagnosis = "overconfident" | "underconfident" | "well_calibrated";
+
+// docs/SPEC.md Phase 9-A-4: judged only on the high-confidence (70%+) bucket,
+// since that's where overconfidence actually costs a trader money. Returns
+// null in the 5-15pp gray zone (not enough signal to call it either way) or
+// when there's no high-confidence data yet.
+export function diagnoseCalibration(buckets: CalibrationBucket[]): CalibrationDiagnosis | null {
+  const highConf = buckets.filter((b) => b.bucketStart >= 70 && b.count > 0);
+  const total = highConf.reduce((s, b) => s + b.count, 0);
+  if (total === 0) return null;
+
+  const weightedPredicted = highConf.reduce((s, b) => s + b.predicted * b.count, 0) / total;
+  const weightedActual = highConf.reduce((s, b) => s + b.actual * b.count, 0) / total;
+  const gap = weightedPredicted - weightedActual; // positive = claimed more than delivered
+
+  if (gap >= 15) return "overconfident";
+  if (gap <= -15) return "underconfident";
+  if (Math.abs(gap) <= 5) return "well_calibrated";
+  return null;
+}
+
+export interface BrierTrendPoint {
+  at: string;
+  rollingBrier: number;
+}
+
+// Rolling Brier score over the last `windowSize` resolved predictions,
+// chronologically — for the "시계열 추이" chart.
+export function calcBrierTrend(
+  records: CalibrationRecord[],
+  windowSize = 10
+): BrierTrendPoint[] {
+  const resolved = resolvedOnly(records)
+    .filter((r) => r.resolvedAt !== null)
+    .sort((a, b) => (a.resolvedAt as string).localeCompare(b.resolvedAt as string));
+
+  return resolved.map((_, i) => {
+    const window = resolved.slice(Math.max(0, i - windowSize + 1), i + 1);
+    return {
+      at: resolved[i].resolvedAt as string,
+      rollingBrier: brierScore(window) ?? 0,
+    };
+  });
+}
+
+// docs/SPEC.md Phase 9-A-6: awarded when the most recent 30 resolved
+// predictions (any context) have a combined Brier score under 0.18. Never
+// return-based — see CLAUDE.md anti-goals.
+export function hasCalibrationBadge(records: CalibrationRecord[]): boolean {
+  const resolved = resolvedOnly(records)
+    .filter((r) => r.resolvedAt !== null)
+    .sort((a, b) => (b.resolvedAt as string).localeCompare(a.resolvedAt as string))
+    .slice(0, 30);
+  if (resolved.length < 30) return false;
+  return (brierScore(resolved) ?? 1) < 0.18;
+}
