@@ -1,6 +1,7 @@
-import { and, desc, eq, gte, SQL } from "drizzle-orm";
+import { and, desc, eq, gte, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FilterLink } from "@/components/filter-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,46 +16,8 @@ import { db } from "@/lib/db";
 import { trades } from "@/lib/db/schema";
 import type { SetupType, SourceType } from "@/lib/domain/types";
 import { QUADRANT_LABELS, SETUP_LABELS } from "@/lib/labels";
+import { PERIOD_DAYS } from "@/lib/queries/trades";
 import { createClient } from "@/lib/supabase/server";
-
-const PERIOD_DAYS: Record<string, number> = {
-  "1M": 30,
-  "3M": 90,
-  "6M": 180,
-  "1Y": 365,
-};
-
-function FilterLink({
-  searchParams,
-  paramKey,
-  value,
-  label,
-  active,
-}: {
-  searchParams: Record<string, string | undefined>;
-  paramKey: string;
-  value: string | undefined;
-  label: string;
-  active: boolean;
-}) {
-  const next = new URLSearchParams(
-    Object.entries(searchParams).filter(([, v]) => v !== undefined) as [
-      string,
-      string,
-    ][]
-  );
-  if (value === undefined) {
-    next.delete(paramKey);
-  } else {
-    next.set(paramKey, value);
-  }
-  const qs = next.toString();
-  return (
-    <Link href={qs ? `/journal?${qs}` : "/journal"}>
-      <Badge variant={active ? "default" : "outline"}>{label}</Badge>
-    </Link>
-  );
-}
 
 export default async function JournalListPage({
   searchParams,
@@ -111,10 +74,11 @@ export default async function JournalListPage({
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">기간:</span>
-        <FilterLink searchParams={params} paramKey="period" value={undefined} label="전체" active={!params.period} />
+        <FilterLink basePath="/journal" searchParams={params} paramKey="period" value={undefined} label="전체" active={!params.period} />
         {Object.keys(PERIOD_DAYS).map((p) => (
           <FilterLink
             key={p}
+            basePath="/journal"
             searchParams={params}
             paramKey="period"
             value={p}
@@ -124,17 +88,18 @@ export default async function JournalListPage({
         ))}
 
         <span className="ml-4 text-sm text-muted-foreground">데이터:</span>
-        <FilterLink searchParams={params} paramKey="source" value={undefined} label="실전" active={!params.source || params.source === "live"} />
-        <FilterLink searchParams={params} paramKey="source" value="replay" label="리플레이" active={params.source === "replay"} />
-        <FilterLink searchParams={params} paramKey="source" value="drill" label="드릴" active={params.source === "drill"} />
+        <FilterLink basePath="/journal" searchParams={params} paramKey="source" value={undefined} label="실전" active={!params.source || params.source === "live"} />
+        <FilterLink basePath="/journal" searchParams={params} paramKey="source" value="replay" label="리플레이" active={params.source === "replay"} />
+        <FilterLink basePath="/journal" searchParams={params} paramKey="source" value="drill" label="드릴" active={params.source === "drill"} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">사분면:</span>
-        <FilterLink searchParams={params} paramKey="quadrant" value={undefined} label="전체" active={!params.quadrant} />
+        <FilterLink basePath="/journal" searchParams={params} paramKey="quadrant" value={undefined} label="전체" active={!params.quadrant} />
         {Object.entries(QUADRANT_LABELS).map(([value, label]) => (
           <FilterLink
             key={value}
+            basePath="/journal"
             searchParams={params}
             paramKey="quadrant"
             value={value}
@@ -146,10 +111,11 @@ export default async function JournalListPage({
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">셋업:</span>
-        <FilterLink searchParams={params} paramKey="setup" value={undefined} label="전체" active={!params.setup} />
+        <FilterLink basePath="/journal" searchParams={params} paramKey="setup" value={undefined} label="전체" active={!params.setup} />
         {Object.entries(SETUP_LABELS).map(([value, label]) => (
           <FilterLink
             key={value}
+            basePath="/journal"
             searchParams={params}
             paramKey="setup"
             value={value}

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { bootstrapCI, calcMetrics } from "./metrics";
+import {
+  bootstrapCI,
+  calcCumulativeRCurve,
+  calcMetrics,
+  calcRHistogram,
+  expectancyOf,
+  pearsonCorrelation,
+  winRateOf,
+} from "./metrics";
 import type { Trade } from "./types";
 
 function makeClosedTrade(
@@ -151,5 +159,82 @@ describe("bootstrapCI", () => {
     const a = bootstrapCI(values, mean, 200, 0.05, 1);
     const b = bootstrapCI(values, mean, 200, 0.05, 2);
     expect(a).not.toEqual(b);
+  });
+});
+
+describe("winRateOf", () => {
+  it("computes the fraction of positive values", () => {
+    expect(winRateOf([1, -1, 2, -1])).toBe(0.5);
+  });
+
+  it("returns 0 for an empty array (division-by-zero guard)", () => {
+    expect(winRateOf([])).toBe(0);
+  });
+});
+
+describe("expectancyOf", () => {
+  it("matches calcMetrics' expectancy for the same R array", () => {
+    const trades = [
+      makeClosedTrade(2, "2026-01-01T00:00:00.000Z"),
+      makeClosedTrade(-1, "2026-01-02T00:00:00.000Z"),
+    ];
+    const result = calcMetrics(trades);
+    expect(expectancyOf([2, -1])).toBeCloseTo(result.expectancy, 10);
+  });
+
+  it("returns 0 for an empty array", () => {
+    expect(expectancyOf([])).toBe(0);
+  });
+});
+
+describe("calcRHistogram", () => {
+  it("bins R values into fixed-width buckets", () => {
+    const bins = calcRHistogram([0.2, 0.4, -0.3, 1.1], 0.5);
+    expect(bins.reduce((s, b) => s + b.count, 0)).toBe(4);
+    expect(bins.every((b) => b.binEnd - b.binStart === 0.5)).toBe(true);
+  });
+
+  it("anchors bins to multiples of binSize so -1R sits on a boundary", () => {
+    const bins = calcRHistogram([-1.5, -1, -0.5, 0], 0.5);
+    expect(bins.some((b) => b.binStart === -1)).toBe(true);
+  });
+
+  it("returns an empty array for an empty input", () => {
+    expect(calcRHistogram([])).toEqual([]);
+  });
+});
+
+describe("calcCumulativeRCurve", () => {
+  it("returns a running total in chronological order", () => {
+    const trades = [
+      makeClosedTrade(2, "2026-01-03T00:00:00.000Z"),
+      makeClosedTrade(-1, "2026-01-01T00:00:00.000Z"),
+      makeClosedTrade(3, "2026-01-02T00:00:00.000Z"),
+    ];
+    // chronological: -1 (01), +3 (02), +2 (03) -> cumulative -1, 2, 4
+    expect(calcCumulativeRCurve(trades)).toEqual([-1, 2, 4]);
+  });
+
+  it("returns an empty array when there are no closed trades", () => {
+    expect(calcCumulativeRCurve([])).toEqual([]);
+  });
+});
+
+describe("pearsonCorrelation", () => {
+  it("returns 1 for a perfectly positively correlated pair", () => {
+    expect(pearsonCorrelation([1, 2, 3, 4], [10, 20, 30, 40])).toBeCloseTo(1, 6);
+  });
+
+  it("returns -1 for a perfectly negatively correlated pair", () => {
+    expect(pearsonCorrelation([1, 2, 3, 4], [40, 30, 20, 10])).toBeCloseTo(-1, 6);
+  });
+
+  it("returns null when fewer than 2 points are given (boundary)", () => {
+    expect(pearsonCorrelation([1], [1])).toBeNull();
+    expect(pearsonCorrelation([], [])).toBeNull();
+  });
+
+  it("returns null when one series has zero variance (division-by-zero guard)", () => {
+    expect(pearsonCorrelation([1, 1, 1], [1, 2, 3])).toBeNull();
   });
 });

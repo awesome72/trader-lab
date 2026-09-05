@@ -133,3 +133,36 @@ export function calcQuadrant(
   if (goodProcess && !goodOutcome) return "badluck";
   return "mistake";
 }
+
+const QUADRANTS: readonly Quadrant[] = ["skill", "luck", "badluck", "mistake"];
+
+// Percentage share of each quadrant (0-100), ignoring trades with no
+// quadrant yet (still open). Returns all-zero if there are none.
+export function calcQuadrantDistribution(
+  quadrants: (Quadrant | null)[]
+): Record<Quadrant, number> {
+  const resolved = quadrants.filter((q): q is Quadrant => q !== null);
+  const result = { skill: 0, luck: 0, badluck: 0, mistake: 0 };
+  if (resolved.length === 0) return result;
+
+  for (const q of QUADRANTS) {
+    result[q] = (resolved.filter((r) => r === q).length / resolved.length) * 100;
+  }
+  return result;
+}
+
+// Per-item average across a set of process-score breakdowns (e.g. for "which
+// component is weakest this month"). Returns null for an empty input.
+export function calcAverageBreakdown(
+  breakdowns: ProcessScoreBreakdown[]
+): ProcessScoreBreakdown | null {
+  if (breakdowns.length === 0) return null;
+
+  const keys = Object.keys(breakdowns[0]) as (keyof ProcessScoreBreakdown)[];
+  const result = {} as ProcessScoreBreakdown;
+  for (const key of keys) {
+    result[key] =
+      breakdowns.reduce((sum, b) => sum + b[key], 0) / breakdowns.length;
+  }
+  return result;
+}

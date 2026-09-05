@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { calcProcessScore, calcQuadrant } from "./process-score";
+import {
+  calcAverageBreakdown,
+  calcProcessScore,
+  calcQuadrant,
+  calcQuadrantDistribution,
+  type ProcessScoreBreakdown,
+} from "./process-score";
 import type { ProfileSettings, Trade, TradeEvent } from "./types";
 
 function makeTrade(overrides: Partial<Trade> = {}): Trade {
@@ -167,5 +173,61 @@ describe("calcQuadrant", () => {
 
   it("treats realizedR of exactly 0 as a bad outcome (boundary)", () => {
     expect(calcQuadrant(80, 0)).toBe("badluck");
+  });
+});
+
+describe("calcQuadrantDistribution", () => {
+  it("computes percentage share per quadrant", () => {
+    const result = calcQuadrantDistribution(["skill", "skill", "luck", "mistake"]);
+    expect(result.skill).toBe(50);
+    expect(result.luck).toBe(25);
+    expect(result.mistake).toBe(25);
+    expect(result.badluck).toBe(0);
+  });
+
+  it("ignores trades with no quadrant yet (still open)", () => {
+    const result = calcQuadrantDistribution(["skill", null, null]);
+    expect(result.skill).toBe(100);
+  });
+
+  it("returns all zeros for an empty array (division-by-zero guard)", () => {
+    expect(calcQuadrantDistribution([])).toEqual({
+      skill: 0,
+      luck: 0,
+      badluck: 0,
+      mistake: 0,
+    });
+  });
+});
+
+describe("calcAverageBreakdown", () => {
+  const a: ProcessScoreBreakdown = {
+    hasPlan: 20,
+    invalidationQuality: 15,
+    stopDiscipline: 25,
+    sizing: 15,
+    noAveragingDown: 10,
+    horizonRespect: 10,
+    emotion: 5,
+  };
+  const b: ProcessScoreBreakdown = {
+    hasPlan: 0,
+    invalidationQuality: 8,
+    stopDiscipline: 0,
+    sizing: 7,
+    noAveragingDown: 0,
+    horizonRespect: 0,
+    emotion: 0,
+  };
+
+  it("averages each component across breakdowns", () => {
+    const result = calcAverageBreakdown([a, b]);
+    expect(result?.hasPlan).toBe(10);
+    expect(result?.invalidationQuality).toBeCloseTo(11.5, 6);
+    expect(result?.stopDiscipline).toBe(12.5);
+  });
+
+  it("returns null for an empty array (division-by-zero guard)", () => {
+    expect(calcAverageBreakdown([])).toBeNull();
   });
 });
