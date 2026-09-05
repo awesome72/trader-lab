@@ -154,7 +154,7 @@ npm run dev
 - [x] **Phase 0** — 프로젝트 스캐폴딩 (Next.js 15 + TS + Tailwind + shadcn/ui)
 - [x] **Phase 1** — `lib/domain/` 순수 함수 8개 모듈 + Vitest 테스트 81개
 - [x] **Phase 2** — Supabase 연결, Drizzle 스키마/마이그레이션, RLS, 매직 링크 인증, 설정 페이지
-- [ ] **Phase 3** — M1 의사결정 저널 (진입 폼, 잠금 규칙, 청산 대조 화면)
+- [x] **Phase 3** — M1 의사결정 저널 (진입 폼, 잠금 규칙, 청산 대조 화면)
 - [ ] **Phase 4** — M2 프로세스 스코어카드 + M3 R-멀티플 대시보드
 - [ ] **Phase 5** — M4 행동 편향 탐지기 + M6 반사실 시뮬레이터
 - [ ] **Phase 6** — M7 블라인드 바 리플레이
