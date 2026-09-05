@@ -1,0 +1,145 @@
+import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { db } from "@/lib/db";
+import { profiles } from "@/lib/db/schema";
+import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/app/(auth)/login/actions";
+import { updateSettings } from "./actions";
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; error?: string }>;
+}) {
+  const { saved, error } = await searchParams;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, user.id));
+
+  return (
+    <div className="mx-auto max-w-lg space-y-6 p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>계좌 & 리스크 설정</CardTitle>
+          <CardDescription>{user.email}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={updateSettings} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="accountSize">계좌 규모 (원)</Label>
+              <Input
+                id="accountSize"
+                name="accountSize"
+                type="number"
+                min={0}
+                step="1"
+                defaultValue={profile?.accountSize ?? 10_000_000}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="defaultRiskPct">기본 리스크 %</Label>
+                <Input
+                  id="defaultRiskPct"
+                  name="defaultRiskPct"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={profile?.defaultRiskPct ?? 1}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxRiskPct">최대 리스크 %</Label>
+                <Input
+                  id="maxRiskPct"
+                  name="maxRiskPct"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={profile?.maxRiskPct ?? 2}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="feeBps">수수료 (bp)</Label>
+                <Input
+                  id="feeBps"
+                  name="feeBps"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={profile?.feeBps ?? 1.5}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taxBps">세금 (bp)</Label>
+                <Input
+                  id="taxBps"
+                  name="taxBps"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={profile?.taxBps ?? 15}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slippageBps">슬리피지 (bp)</Label>
+                <Input
+                  id="slippageBps"
+                  name="slippageBps"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  defaultValue={profile?.slippageBps ?? 10}
+                  required
+                />
+              </div>
+            </div>
+
+            {saved ? (
+              <p className="text-sm text-emerald-600">저장되었습니다.</p>
+            ) : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+            <Button type="submit" className="w-full">
+              저장
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <form action={signOut}>
+        <Button type="submit" variant="outline" className="w-full">
+          로그아웃
+        </Button>
+      </form>
+    </div>
+  );
+}
