@@ -1,4 +1,4 @@
-import type { Direction } from "./types";
+import type { Direction, ExitReason } from "./types";
 
 /**
  * Planned R-multiple at entry: reward-to-risk ratio implied by entry/stop/target.
@@ -64,4 +64,27 @@ export function applyCosts(
   const costPerShare = (entry * totalCostBps) / 10000;
   const costInR = costPerShare / riskPerShare;
   return grossR - costInR;
+}
+
+/**
+ * Classifies an exit price against the pre-declared stop/target, for flows
+ * (e.g. app/replay) where the trader doesn't manually pick an exit reason —
+ * the fill itself tells us which rule fired. Stop takes priority when a
+ * price gap makes both look true in the same bar.
+ */
+export function inferExitReason(
+  direction: Direction,
+  exitPrice: number,
+  stopPrice: number,
+  target1Price: number | null
+): ExitReason {
+  const stopHit = direction === "long" ? exitPrice <= stopPrice : exitPrice >= stopPrice;
+  if (stopHit) return "stop";
+
+  const targetHit =
+    target1Price !== null &&
+    (direction === "long" ? exitPrice >= target1Price : exitPrice <= target1Price);
+  if (targetHit) return "target";
+
+  return "discretionary";
 }

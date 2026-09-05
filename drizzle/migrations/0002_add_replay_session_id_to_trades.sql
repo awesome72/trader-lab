@@ -1,0 +1,1 @@
+ALTER TABLE "trades" ADD COLUMN "replay_session_id" uuid;

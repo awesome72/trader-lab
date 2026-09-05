@@ -14,6 +14,7 @@ function makeTrade(overrides: Partial<Trade> = {}): Trade {
     source: "live",
     ticker: "005930",
     maskedLabel: null,
+    replaySessionId: null,
     status: "closed",
     entryAt: "2026-01-10T09:30:00.000Z",
     entryPrice: 100,

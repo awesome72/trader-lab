@@ -24,6 +24,7 @@ export interface Trade {
   ticker: string | null;
   maskedLabel: string | null;
   status: TradeStatus;
+  replaySessionId: string | null;
 
   // Entry (append-only once journalLockedAt is set)
   entryAt: string | null;

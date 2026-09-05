@@ -133,6 +133,7 @@ npm run dev
 | `npm run test:watch` | Vitest watch 모드 |
 | `npm run db:generate` | 스키마 변경분으로 마이그레이션 SQL 생성 |
 | `npm run db:migrate` | 대기 중인 마이그레이션을 DB에 적용 |
+| `npm run db:seed-ohlcv` | `app/replay` 개발/테스트용 합성(가짜) OHLCV·수급 데이터 시딩 (실제 시세 아님, Phase 10 이전 임시) |
 
 ## 도메인 용어
 
@@ -157,7 +158,7 @@ npm run dev
 - [x] **Phase 3** — M1 의사결정 저널 (진입 폼, 잠금 규칙, 청산 대조 화면)
 - [x] **Phase 4** — M2 프로세스 스코어카드 + M3 R-멀티플 대시보드
 - [x] **Phase 5** — M4 행동 편향 탐지기 + M6 반사실 시뮬레이터
-- [ ] **Phase 6** — M7 블라인드 바 리플레이
+- [x] **Phase 6** — M7 블라인드 바 리플레이
 - [ ] **Phase 7** — M9 노코드 룰 백테스터
 - [ ] **Phase 8** — M10 AI 소크라테스 코치
 - [ ] **Phase 9** — M5 캘리브레이션 · M8 드릴 · M11 SRS · M12 몬테카를로 리스크랩

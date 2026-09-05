@@ -67,3 +67,22 @@ export const journalCloseSchema = z.object({
 });
 
 export type JournalCloseInput = z.infer<typeof journalCloseSchema>;
+
+// Abbreviated pre-commitment for app/replay (docs/SPEC.md Phase 6-4):
+// thesis/invalidation/stop/target/confidence only — no ticker/entry fields
+// since those come from the replay bar itself, not the trader.
+export const replayEntrySchema = z.object({
+  thesis: z
+    .string()
+    .trim()
+    .min(30, "논거를 최소 30자 이상 입력해주세요."),
+  invalidation: z
+    .string()
+    .trim()
+    .min(20, "무효화 조건은 최소 20자 이상 입력해주세요."),
+  stopPrice: z.number().positive("손절가는 0보다 커야 합니다."),
+  target1Price: z.number().positive().optional(),
+  confidence: z.number().int().min(0).max(100),
+});
+
+export type ReplayEntryInput = z.infer<typeof replayEntrySchema>;

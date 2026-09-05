@@ -137,6 +137,7 @@ export const trades = pgTable(
     ticker: text("ticker"),
     maskedLabel: text("masked_label"),
     status: tradeStatusEnum("status").notNull().default("planned"),
+    replaySessionId: uuid("replay_session_id"),
 
     // Entry (append-only once journalLockedAt is set)
     entryAt: timestamp("entry_at", { withTimezone: true }),

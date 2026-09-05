@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed-ohlcv": "node scripts/seed-ohlcv.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -20,6 +21,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.2.5",
     "drizzle-orm": "^0.45.2",
+    "lightweight-charts": "^5.2.1",
     "lucide-react": "^1.41.0",
     "next": "^15.5.25",
     "postgres": "^3.4.9",

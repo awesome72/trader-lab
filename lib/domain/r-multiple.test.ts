@@ -5,6 +5,7 @@ import {
   calcPositionSize,
   calcRealizedR,
   calcRiskAmount,
+  inferExitReason,
 } from "./r-multiple";
 
 describe("calcPlannedR", () => {
@@ -98,5 +99,38 @@ describe("applyCosts", () => {
 
   it("applies zero cost when all bps are 0 (boundary)", () => {
     expect(applyCosts(2, 100, 90, 0, 0, 0)).toBe(2);
+  });
+});
+
+describe("inferExitReason", () => {
+  it("classifies a long exit at/below the stop as 'stop'", () => {
+    expect(inferExitReason("long", 90, 90, 130)).toBe("stop");
+    expect(inferExitReason("long", 85, 90, 130)).toBe("stop");
+  });
+
+  it("classifies a long exit at/above the target as 'target'", () => {
+    expect(inferExitReason("long", 130, 90, 130)).toBe("target");
+    expect(inferExitReason("long", 140, 90, 130)).toBe("target");
+  });
+
+  it("prioritizes stop over target when both conditions match (gap case)", () => {
+    // target below entry (already invalid setup) but stop also hit
+    expect(inferExitReason("long", 80, 90, 70)).toBe("stop");
+  });
+
+  it("falls back to 'discretionary' when neither stop nor target was reached", () => {
+    expect(inferExitReason("long", 105, 90, 130)).toBe("discretionary");
+  });
+
+  it("falls back to 'discretionary' when there is no declared target", () => {
+    expect(inferExitReason("long", 105, 90, null)).toBe("discretionary");
+  });
+
+  it("classifies a short exit at/above the stop as 'stop'", () => {
+    expect(inferExitReason("short", 106, 105, 85)).toBe("stop");
+  });
+
+  it("classifies a short exit at/below the target as 'target'", () => {
+    expect(inferExitReason("short", 85, 105, 85)).toBe("target");
   });
 });

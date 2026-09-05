@@ -17,6 +17,7 @@ export function dbTradeToDomain(row: TradeRow): Trade {
     ticker: row.ticker,
     maskedLabel: row.maskedLabel,
     status: row.status,
+    replaySessionId: row.replaySessionId,
     entryAt: row.entryAt ? row.entryAt.toISOString() : null,
     entryPrice: row.entryPrice,
     quantity: row.quantity,

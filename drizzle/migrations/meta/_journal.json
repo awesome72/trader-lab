@@ -15,6 +15,20 @@
       "when": 1788610663677,
       "tag": "0001_rls_and_profile_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788647217349,
+      "tag": "0002_add_replay_session_id_to_trades",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788647229251,
+      "tag": "0003_replay_session_fk",
+      "breakpoints": true
     }
   ]
 }
