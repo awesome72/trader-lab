@@ -1,0 +1,67 @@
+name: Data collector
+
+on:
+  schedule:
+    # 09:00 UTC = 18:00 KST, weekdays only (docs/SPEC.md Phase 10-3: daily.py)
+    - cron: "0 9 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      script:
+        description: "Which script to run"
+        required: true
+        default: "daily"
+        type: choice
+        options:
+          - daily
+          - master
+          - backfill
+      backfill_start:
+        description: "backfill.py --start (YYYY-MM-DD, only used when script=backfill)"
+        required: false
+        default: ""
+      backfill_end:
+        description: "backfill.py --end (YYYY-MM-DD, only used when script=backfill)"
+        required: false
+        default: ""
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts/collector
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily.py (scheduled)
+        if: github.event_name == 'schedule'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          KRX_ID: ${{ secrets.KRX_ID }}
+          KRX_PW: ${{ secrets.KRX_PW }}
+        run: python daily.py
+
+      - name: Run selected script (manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          KRX_ID: ${{ secrets.KRX_ID }}
+          KRX_PW: ${{ secrets.KRX_PW }}
+        run: |
+          case "${{ inputs.script }}" in
+            daily) python daily.py ;;
+            master) python master.py ;;
+            backfill)
+              ARGS=""
+              if [ -n "${{ inputs.backfill_start }}" ]; then ARGS="$ARGS --start ${{ inputs.backfill_start }}"; fi
+              if [ -n "${{ inputs.backfill_end }}" ]; then ARGS="$ARGS --end ${{ inputs.backfill_end }}"; fi
+              python backfill.py $ARGS
+              ;;
+          esac
