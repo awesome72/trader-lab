@@ -169,12 +169,12 @@ npm run dev
   - [x] 9-B M8 시나리오 드릴 (`app/drills`, `app/drills/consistency`)
   - [x] 9-C M11 간격 반복 학습(SRS) (`app/cards`)
   - [x] 9-D M12 몬테카를로 리스크랩 (`app/risklab`)
-- [ ] **Phase 10** — 통합 · 온보딩 · 데이터 수집기
+- [x] **Phase 10** — 통합 · 온보딩 · 데이터 수집기
   - [x] 10-1 홈 대시보드 (`app/`) — 가장 큰 숫자는 항상 프로세스 점수
   - [x] 10-2 온보딩 5단계 (`app/onboarding`)
   - [x] 10-3 데이터 수집기 (Python, `scripts/collector/`) — 자세한 내용은 `scripts/collector/README.md`
   - [x] 10-4 증권사 CSV 임포트 (`app/import`) + 전체 데이터 JSON 내보내기 (`/api/export`, 설정 페이지)
-  - [ ] 10-5 마무리 점검 (면책 문구 — 완료, 로딩/빈/에러 상태, 모바일 반응형)
+  - [x] 10-5 마무리 점검 (면책 문구, 전역 로딩/에러/404, 빈 상태, 모바일 반응형, 빌드/테스트 통과)
 
 ## 만들지 않는 것 (Anti-goals)
 
