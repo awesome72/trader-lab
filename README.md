@@ -198,12 +198,15 @@ cp .env.example .env.local
 | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API Keys | **서버 전용.** secret/service_role 키 |
 | `DATABASE_URL` | Project Settings → Database → Connect → ORM → Drizzle | 비밀번호의 특수문자는 URL 인코딩 필요(예: `@` → `%40`) |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) | **서버 전용.** `/api/ai/coach`(M10 AI 코치)에서만 사용 |
+| `NEXT_PUBLIC_SITE_URL` | 배포된 실제 도메인 | 매직 링크 이메일의 리다이렉트 주소를 만드는 데 사용(`app/(auth)/login/actions.ts`). **로컬 개발에서는 비워두면 `http://localhost:3000`으로 자동 대체되어 필요 없지만, Vercel 등에 배포할 때는 반드시 실제 배포 URL로 설정해야 합니다** — 설정하지 않으면 매직 링크가 `localhost`로 연결을 시도해 개발자 외에는 아무도 로그인할 수 없습니다(실제로 겪은 문제). |
 
-또한 Supabase 대시보드 **Authentication → URL Configuration → Redirect URLs**에 아래를 추가해야 매직 링크 로그인이 동작합니다:
+또한 Supabase 대시보드 **Authentication → URL Configuration → Redirect URLs**에 아래를 추가해야 매직 링크 로그인이 동작합니다(로컬 개발용 + 배포 도메인용 모두):
 
 ```
 http://localhost:3000/auth/callback
 http://localhost:3000/**
+https://<배포 도메인>/auth/callback
+https://<배포 도메인>/**
 ```
 
 ### 3. DB 마이그레이션 적용
@@ -233,6 +236,18 @@ npm run dev
 ```
 
 [http://localhost:3000](http://localhost:3000) 접속 시 로그인하지 않은 요청은 `/login`으로 리다이렉트됩니다. 매직 링크로 가입하면 홈 화면에 온보딩 배너가 뜹니다 — [M0. 온보딩](#m0-온보딩)부터 시작하면 전체 기능을 순서대로 훑어볼 수 있습니다.
+
+### 6. 배포 (Vercel)
+
+라이브 배포: **https://trader-lab-eight.vercel.app** (Vercel 프로젝트가 이 GitHub 저장소와 연결되어 있어 `main` 브랜치에 푸시하면 자동으로 재배포됩니다.)
+
+직접 새로 배포하는 경우 체크리스트:
+
+1. `vercel link`로 프로젝트 연결 (소문자 프로젝트명 필요).
+2. 위 환경변수 5개 + **`NEXT_PUBLIC_SITE_URL`(실제 배포 도메인, 필수)**을 `vercel env add <이름> production`으로 등록. `NEXT_PUBLIC_*` 값은 빌드 시점에 번들에 박히므로 값을 바꾸면 반드시 재배포해야 합니다.
+3. Supabase 대시보드에 배포 도메인의 `/auth/callback`과 `/**`를 Redirect URLs에 추가.
+4. `vercel --prod`로 배포.
+5. Supabase 무료 플랜은 내장 이메일 발송 한도가 시간당 매우 낮습니다(수 통 수준). 여러 계정으로 자주 테스트해야 한다면 Authentication → Emails에서 커스텀 SMTP(Resend, Gmail 등)를 연결하는 것을 권장합니다.
 
 ## 스크립트
 
