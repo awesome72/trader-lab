@@ -6,6 +6,7 @@ import { calcBiasRadar, deriveFomoPriceContextFromTags, type BiasRadar } from "@
 import { QUADRANT_LABELS } from "@/lib/labels";
 import { getOngoingExperiment } from "@/lib/queries/coach";
 import { getOpenPositions, getRecentClosedTrades, getWeeklyProcessScoreComparison } from "@/lib/queries/dashboard";
+import { getOnboardingStatus } from "@/lib/queries/onboarding";
 import { getDueCardCount } from "@/lib/queries/srs";
 import { getEventsForTrades, getFilteredTrades } from "@/lib/queries/trades";
 import { createClient } from "@/lib/supabase/server";
@@ -44,7 +45,8 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const [openPositions, experiment, weeklyScore, dueCardCount, recentTrades, allLiveTrades] = await Promise.all([
+  const [onboarding, openPositions, experiment, weeklyScore, dueCardCount, recentTrades, allLiveTrades] = await Promise.all([
+    getOnboardingStatus(user.id),
     getOpenPositions(user.id),
     getOngoingExperiment(user.id),
     getWeeklyProcessScoreComparison(user.id),
@@ -67,6 +69,17 @@ export default async function Home() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
+      {!onboarding.completed ? (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex items-center justify-between pt-6">
+            <p className="text-sm">아직 온보딩을 완료하지 않았습니다. 5단계로 핵심 기능을 빠르게 익혀보세요.</p>
+            <Link href="/onboarding" className="shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted">
+              온보딩 시작
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* 이 앱의 정체성: 가장 큰 숫자는 항상 프로세스 점수여야 하며, 계좌
           수익률/평가금액은 여기서 절대 크게 보여주지 않는다 (docs/SPEC.md Phase 10-1). */}
       <Card>

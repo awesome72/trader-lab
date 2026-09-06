@@ -71,6 +71,7 @@ export const profiles = pgTable("profiles", {
   feeBps: numeric("fee_bps", { mode: "number" }).notNull().default(1.5),
   taxBps: numeric("tax_bps", { mode: "number" }).notNull().default(15),
   slippageBps: numeric("slippage_bps", { mode: "number" }).notNull().default(10),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
