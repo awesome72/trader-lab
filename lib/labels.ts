@@ -56,9 +56,16 @@ export const EMOTION_TAGS: { value: string; label: string }[] = [
   { value: "bored", label: "지루함" },
 ];
 
-export const EMOTION_LABELS: Record<string, string> = Object.fromEntries(
-  EMOTION_TAGS.map((t) => [t.value, t.label])
-);
+// docs/SPEC.md Phase 10-4: CSV-imported historical trades have no real
+// pre-declared plan, so they're tagged with this marker (never selectable
+// in the journal entry form's emotion picker — only ever applied by the
+// importer itself).
+export const NO_PLAN_TAG = "no_plan";
+
+export const EMOTION_LABELS: Record<string, string> = {
+  ...Object.fromEntries(EMOTION_TAGS.map((t) => [t.value, t.label])),
+  [NO_PLAN_TAG]: "사전 계획 없음 (CSV 임포트)",
+};
 
 export const COUNTERFACTUAL_SCENARIO_LABELS: Record<CounterfactualScenario, string> = {
   actual: "실제",

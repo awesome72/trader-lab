@@ -33,6 +33,7 @@ const QUICK_LINKS: { href: string; label: string }[] = [
   { href: "/drills", label: "시나리오 드릴" },
   { href: "/cards", label: "복습 카드" },
   { href: "/risklab", label: "리스크랩" },
+  { href: "/import", label: "거래내역 임포트" },
   { href: "/settings", label: "설정" },
 ];
 

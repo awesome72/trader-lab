@@ -173,7 +173,7 @@ npm run dev
   - [x] 10-1 홈 대시보드 (`app/`) — 가장 큰 숫자는 항상 프로세스 점수
   - [x] 10-2 온보딩 5단계 (`app/onboarding`)
   - [x] 10-3 데이터 수집기 (Python, `scripts/collector/`) — 자세한 내용은 `scripts/collector/README.md`
-  - [ ] 10-4 증권사 CSV 임포트 + 전체 데이터 JSON 내보내기
+  - [x] 10-4 증권사 CSV 임포트 (`app/import`) + 전체 데이터 JSON 내보내기 (`/api/export`, 설정 페이지)
   - [ ] 10-5 마무리 점검 (면책 문구 — 완료, 로딩/빈/에러 상태, 모바일 반응형)
 
 ## 만들지 않는 것 (Anti-goals)
