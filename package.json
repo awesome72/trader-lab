@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed-ohlcv": "node scripts/seed-ohlcv.mjs",
-    "db:seed-drills": "node scripts/seed-drills.mjs"
+    "db:seed-drills": "node scripts/seed-drills.mjs",
+    "db:seed-cards": "node scripts/seed-cards.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

@@ -136,6 +136,7 @@ npm run dev
 | `npm run db:migrate` | 대기 중인 마이그레이션을 DB에 적용 |
 | `npm run db:seed-ohlcv` | `app/replay` 개발/테스트용 합성(가짜) OHLCV·수급 데이터 시딩 (실제 시세 아님, Phase 10 이전 임시) |
 | `npm run db:seed-drills` | `app/drills` 시나리오 드릴 카드 20종 시딩 |
+| `npm run db:seed-cards` | `app/cards` 공용 SRS 덱 60장 시딩 |
 
 ## 도메인 용어
 
@@ -166,7 +167,7 @@ npm run dev
 - [ ] **Phase 9** — M5 캘리브레이션 · M8 드릴 · M11 SRS · M12 몬테카를로 리스크랩
   - [x] 9-A M5 캘리브레이션 트레이너 (`app/calibration`, `app/calibration/quiz`)
   - [x] 9-B M8 시나리오 드릴 (`app/drills`, `app/drills/consistency`)
-  - [ ] 9-C M11 간격 반복 학습(SRS)
+  - [x] 9-C M11 간격 반복 학습(SRS) (`app/cards`)
   - [ ] 9-D M12 몬테카를로 리스크랩
 - [ ] **Phase 10** — 통합 · 온보딩 · 데이터 수집기
 
