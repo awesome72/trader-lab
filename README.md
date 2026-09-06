@@ -164,11 +164,11 @@ npm run dev
 - [x] **Phase 6** — M7 블라인드 바 리플레이
 - [x] **Phase 7** — M9 노코드 룰 백테스터
 - [x] **Phase 8** — M10 AI 소크라테스 코치
-- [ ] **Phase 9** — M5 캘리브레이션 · M8 드릴 · M11 SRS · M12 몬테카를로 리스크랩
+- [x] **Phase 9** — M5 캘리브레이션 · M8 드릴 · M11 SRS · M12 몬테카를로 리스크랩
   - [x] 9-A M5 캘리브레이션 트레이너 (`app/calibration`, `app/calibration/quiz`)
   - [x] 9-B M8 시나리오 드릴 (`app/drills`, `app/drills/consistency`)
   - [x] 9-C M11 간격 반복 학습(SRS) (`app/cards`)
-  - [ ] 9-D M12 몬테카를로 리스크랩
+  - [x] 9-D M12 몬테카를로 리스크랩 (`app/risklab`)
 - [ ] **Phase 10** — 통합 · 온보딩 · 데이터 수집기
 
 ## 만들지 않는 것 (Anti-goals)

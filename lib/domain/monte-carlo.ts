@@ -97,3 +97,61 @@ export function simulate(
     longestLossStreakDist,
   };
 }
+
+// docs/SPEC.md Phase 9-D-1: when a trader hasn't logged 30+ trades yet, they
+// can supply assumptions (win rate, avg win/loss R) instead of their real
+// distribution. Builds a representative sample in the same proportions —
+// deterministic, so the same assumptions always produce the same sample.
+export function buildSyntheticRDistribution(
+  winRate: number,
+  avgWinR: number,
+  avgLossR: number,
+  sampleSize = 100
+): number[] {
+  const clampedWinRate = Math.max(0, Math.min(1, winRate));
+  const winCount = Math.round(sampleSize * clampedWinRate);
+  const lossCount = sampleSize - winCount;
+  return [
+    ...Array(winCount).fill(Math.abs(avgWinR)),
+    ...Array(lossCount).fill(-Math.abs(avgLossR)),
+  ];
+}
+
+export interface RiskLevelComparison {
+  riskPct: number;
+  result: MonteCarloResult | null;
+}
+
+// docs/SPEC.md Phase 9-D-4 (the core educational device): the same skill
+// (same R distribution) simulated at several sizing levels side by side, so
+// the only thing that varies between rows is riskPct.
+export function compareRiskLevels(
+  rDistribution: number[],
+  riskLevels: number[],
+  opts: Omit<MonteCarloOptions, "riskPct">
+): RiskLevelComparison[] {
+  return riskLevels.map((riskPct) => ({
+    riskPct,
+    result: simulate(rDistribution, { ...opts, riskPct }),
+  }));
+}
+
+export function buildRiskComparisonCaption(comparisons: RiskLevelComparison[]): string | null {
+  const valid = comparisons.filter(
+    (c): c is { riskPct: number; result: MonteCarloResult } => c.result !== null
+  );
+  if (valid.length < 2) return null;
+
+  const lowest = valid[0];
+  const highest = valid[valid.length - 1];
+  const a = (lowest.result.ruinProbability * 100).toFixed(0);
+  const b = (highest.result.ruinProbability * 100).toFixed(0);
+  return `동일한 실력(같은 R 분포)이라도 사이징만으로 파산 확률이 ${a}%에서 ${b}%로 변합니다.`;
+}
+
+// "N연속 손실을 겪을 확률 X%" — the share of trials whose longest losing
+// streak reached at least `n`.
+export function calcLossStreakProbability(longestLossStreakDist: number[], n: number): number {
+  if (longestLossStreakDist.length === 0) return 0;
+  return longestLossStreakDist.filter((streak) => streak >= n).length / longestLossStreakDist.length;
+}
