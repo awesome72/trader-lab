@@ -46,6 +46,7 @@ next-env.d.ts
 __pycache__/
 *.pyc
 .venv/
+scripts/collector/*.log
 
 .vercel
 .env*
