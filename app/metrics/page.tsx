@@ -7,6 +7,7 @@ import { profiles } from "@/lib/db/schema";
 import {
   bootstrapCI,
   calcCumulativeRCurve,
+  calcImportedTradeSummary,
   calcMetrics,
   calcRHistogram,
   expectancyOf,
@@ -53,6 +54,7 @@ export default async function MetricsPage({
   const expectancyCI = bootstrapCI(rs, expectancyOf, 1000, 0.05, 2);
   const histogram = calcRHistogram(rs, 0.5);
   const cumulativeCurve = calcCumulativeRCurve(trades);
+  const importedSummary = calcImportedTradeSummary(trades);
 
   const currentRiskPct = profile?.defaultRiskPct ?? 1;
 
@@ -178,6 +180,26 @@ export default async function MetricsPage({
           />
         </CardContent>
       </Card>
+
+      {importedSummary.n > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>CSV로 가져온 거래</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            <p className="text-muted-foreground">
+              사전 계획이 없어 위 R-multiple 지표에는 포함되지 않지만, 실현 손익만 별도로 집계합니다.
+            </p>
+            <p>
+              {importedSummary.n}건 · 승률 {(importedSummary.winRate * 100).toFixed(0)}% · 총 손익{" "}
+              <span className={importedSummary.totalPnl >= 0 ? "font-semibold text-emerald-600" : "font-semibold text-destructive"}>
+                {Math.round(importedSummary.totalPnl).toLocaleString()}원
+              </span>{" "}
+              · 건당 평균 {Math.round(importedSummary.avgPnl).toLocaleString()}원
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

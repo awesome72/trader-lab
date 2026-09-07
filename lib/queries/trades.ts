@@ -1,7 +1,8 @@
-import { and, eq, gte, inArray, type SQL } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { dbTradeEventToDomain, dbTradeToDomain } from "@/lib/db/mappers";
-import { tradeEvents, trades } from "@/lib/db/schema";
+import { ohlcvDaily, tradeEvents, trades } from "@/lib/db/schema";
+import type { DailyBar } from "@/lib/domain/price-range";
 import type { SourceType, Trade, TradeEvent } from "@/lib/domain/types";
 
 export const PERIOD_DAYS: Record<string, number> = {
@@ -72,4 +73,21 @@ export async function getEventsForTrades(
     .where(and(eq(trades.userId, userId), inArray(tradeEvents.tradeId, tradeIds)));
 
   return rows.map((r) => dbTradeEventToDomain(r.event));
+}
+
+// Market data has no userId column (it's shared, not user-owned), so no
+// ownership filter is needed here — just the ticker. Used by the close-trade
+// form (app/journal/[id]/close) to auto-fill MAE/MFE lows/highs when the
+// collector has already backfilled this ticker; falls back to manual entry
+// (via lib/domain/price-range.ts returning null) when it hasn't.
+export async function getOhlcvBarsSince(ticker: string, fromDate: string): Promise<DailyBar[]> {
+  const rows = await db
+    .select({ d: ohlcvDaily.d, low: ohlcvDaily.low, high: ohlcvDaily.high })
+    .from(ohlcvDaily)
+    .where(and(eq(ohlcvDaily.ticker, ticker), gte(ohlcvDaily.d, fromDate)))
+    .orderBy(asc(ohlcvDaily.d));
+
+  return rows
+    .filter((r): r is { d: string; low: number; high: number } => r.low !== null && r.high !== null)
+    .map((r) => ({ d: r.d, low: r.low, high: r.high }));
 }

@@ -123,6 +123,35 @@ export function calcMetricsFromRs(rs: number[]): MetricsResult {
   };
 }
 
+export interface ImportedTradeSummary {
+  n: number;
+  winRate: number;
+  totalPnl: number;
+  avgPnl: number;
+}
+
+// CSV-imported trades (lib/queries/import.ts) intentionally leave
+// realizedR null forever since there's no declared risk basis to compute a
+// multiple against, but realizedPnl is still computed from actual entry/exit
+// prices. That combination — realizedPnl present, realizedR absent — is
+// exactly the imported-trade population, so it identifies them without this
+// domain module needing to know about NO_PLAN_TAG (a UI-layer label).
+export function calcImportedTradeSummary(trades: Trade[]): ImportedTradeSummary {
+  const imported = trades.filter(
+    (t): t is Trade & { realizedPnl: number } =>
+      t.realizedR === null && t.realizedPnl !== null
+  );
+  const n = imported.length;
+  const wins = imported.filter((t) => t.realizedPnl > 0).length;
+  const totalPnl = imported.reduce((s, t) => s + t.realizedPnl, 0);
+  return {
+    n,
+    winRate: n > 0 ? wins / n : 0,
+    totalPnl,
+    avgPnl: n > 0 ? totalPnl / n : 0,
+  };
+}
+
 export interface RHistogramBin {
   binStart: number;
   binEnd: number;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bootstrapCI,
   calcCumulativeRCurve,
+  calcImportedTradeSummary,
   calcMetrics,
   calcMetricsFromRs,
   calcRHistogram,
@@ -257,5 +258,39 @@ describe("calcMetricsFromRs", () => {
     const result = calcMetricsFromRs([]);
     expect(result.n).toBe(0);
     expect(result.insufficientSample).toBe(true);
+  });
+});
+
+describe("calcImportedTradeSummary", () => {
+  function makeImportedTrade(realizedPnl: number, exitAt: string): Trade {
+    return makeClosedTrade(0, exitAt, { realizedR: null, realizedPnl });
+  }
+
+  it("counts only trades with realizedR null and realizedPnl present", () => {
+    const trades = [
+      makeImportedTrade(50_000, "2026-01-01"),
+      makeImportedTrade(-20_000, "2026-01-02"),
+      makeClosedTrade(1.5, "2026-01-03"), // a real (non-imported) closed trade
+    ];
+    const result = calcImportedTradeSummary(trades);
+    expect(result.n).toBe(2);
+  });
+
+  it("computes win rate and average/total pnl from imported trades only", () => {
+    const trades = [
+      makeImportedTrade(100_000, "2026-01-01"),
+      makeImportedTrade(-40_000, "2026-01-02"),
+      makeImportedTrade(60_000, "2026-01-03"),
+    ];
+    const result = calcImportedTradeSummary(trades);
+    expect(result.n).toBe(3);
+    expect(result.winRate).toBeCloseTo(2 / 3);
+    expect(result.totalPnl).toBe(120_000);
+    expect(result.avgPnl).toBe(40_000);
+  });
+
+  it("returns zeroed result for no imported trades", () => {
+    const result = calcImportedTradeSummary([makeClosedTrade(1, "2026-01-01")]);
+    expect(result).toEqual({ n: 0, winRate: 0, totalPnl: 0, avgPnl: 0 });
   });
 });

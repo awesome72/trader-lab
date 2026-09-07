@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { calcPriceRangeInWindow, type DailyBar } from "@/lib/domain/price-range";
 import { EXIT_REASON_LABELS } from "@/lib/labels";
 import {
   journalCloseSchema,
@@ -28,17 +30,24 @@ function toLocalDatetimeInputValue(date: Date): string {
 export function CloseForm({
   tradeId,
   entryPrice,
+  entryDate,
+  bars,
 }: {
   tradeId: string;
   entryPrice: number;
+  entryDate: string; // "YYYY-MM-DD"
+  bars: DailyBar[];
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
 
   const {
     register,
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<JournalCloseInput>({
     resolver: zodResolver(journalCloseSchema),
@@ -50,6 +59,29 @@ export function CloseForm({
       invalidationTriggered: "unsure",
     },
   });
+
+  const exitAt = watch("exitAt");
+
+  // Real market data (scripts/collector/) beats asking the trader to
+  // remember prices by hand — auto-fills whenever this ticker has coverage
+  // for the entry→exit window, but the fields stay editable so a trader can
+  // always override (e.g. intraday extremes a daily bar can't capture).
+  useEffect(() => {
+    if (bars.length === 0 || !exitAt) {
+      setAutoFilled(false);
+      return;
+    }
+    const exitDate = exitAt.slice(0, 10);
+    const range = calcPriceRangeInWindow(bars, entryDate, exitDate);
+    if (range) {
+      setValue("lowestPrice", range.low);
+      setValue("highestPrice", range.high);
+      setAutoFilled(true);
+    } else {
+      setAutoFilled(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exitAt, bars, entryDate]);
 
   async function onSubmit(values: JournalCloseInput) {
     setSubmitting(true);
@@ -130,10 +162,17 @@ export function CloseForm({
           ) : null}
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        아직 시세 데이터가 연동되지 않아 보유 중 최저/최고가는 직접 입력합니다
-        (MAE/MFE 계산에 사용됩니다).
-      </p>
+      {autoFilled ? (
+        <p className="text-xs text-muted-foreground">
+          <Badge variant="outline" className="mr-1 text-emerald-600">실제 시세로 자동 계산됨</Badge>
+          일봉 기준이라 장중 순간적인 극값은 반영되지 않을 수 있습니다 — 필요하면 직접 수정하세요.
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          이 종목·기간의 시세 데이터가 아직 없어 보유 중 최저/최고가는 직접 입력합니다
+          (MAE/MFE 계산에 사용됩니다).
+        </p>
+      )}
 
       <div className="space-y-2">
         <Label>무효화 조건이 발동했나요?</Label>
