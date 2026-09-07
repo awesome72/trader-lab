@@ -1,7 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+// /api/cron/* isn't a browser route — it's called by
+// .github/workflows/weekly-digest.yml with no Supabase session cookie at
+// all, and authenticates itself via a CRON_SECRET bearer token instead
+// (see app/api/cron/weekly-digest/route.ts). Without this, the redirect
+// below would 307 every cron call to /login before its own auth check
+// ever ran.
+const PUBLIC_PATHS = ["/login", "/auth", "/api/cron"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

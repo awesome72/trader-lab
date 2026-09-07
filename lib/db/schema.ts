@@ -73,6 +73,7 @@ export const profiles = pgTable("profiles", {
   slippageBps: numeric("slippage_bps", { mode: "number" }).notNull().default(10),
   onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
   onboardingStep: integer("onboarding_step").notNull().default(1),
+  weeklyDigestEnabled: boolean("weekly_digest_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

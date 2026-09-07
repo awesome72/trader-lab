@@ -80,15 +80,15 @@
 
 ### M0. 온보딩 — `/onboarding`
 
-첫 로그인 시 5단계로 핵심 개념을 익힙니다: (1) 계좌 규모·리스크% 설정 → (2) 손절폭 슬라이더로 R-multiple 체감 → (3) 저널 작성 튜토리얼(샘플 데이터, 실제 작성 페이지로 연결) → (4) 리플레이 L1 세션 1회 체험(강제) → (5) 10문항 캘리브레이션 퀴즈로 베이스라인 Brier Score 기록. 중간에 나가면 처음부터 다시 시작합니다. 완료 여부는 `profiles.onboarding_completed_at`에 기록됩니다.
+첫 로그인 시 5단계로 핵심 개념을 익힙니다: (1) 계좌 규모·리스크% 설정 → (2) 손절폭 슬라이더로 R-multiple 체감 → (3) 저널 작성 튜토리얼(샘플 데이터, 실제 작성 페이지로 연결) → (4) 리플레이 L1 세션 1회 체험(강제) → (5) 10문항 캘리브레이션 퀴즈로 베이스라인 Brier Score 기록. 중간에 나가도 홈 화면의 배너로 돌아오면 마지막으로 완료한 단계부터 이어집니다(`profiles.onboarding_step`). 완료 여부는 `profiles.onboarding_completed_at`에 기록됩니다.
 
 ![온보딩 1단계: 계좌 규모·리스크 설정](docs/screenshots/onboarding.jpg)
 
 ### M1. 의사결정 저널 — `/journal`
 
-- **`/journal/new`**: 진입 전 논거(50자+)·무효화 조건(20자+)·손절가·목표가·확신도·사이징을 미리 선언합니다. 저장 즉시 잠기며(append-only), 이후 저널 화면에서 수정할 수 없습니다. 직전 거래가 손실이었다면 보복매매 경고 배너가 뜹니다.
+- **`/journal/new`**: 진입 전 논거(50자+)·무효화 조건(20자+)·손절가·목표가·확신도·사이징을 미리 선언합니다. 셋업 유형·손절 근거·목표가2·감정 태그처럼 기본값이 있는 항목은 "고급 옵션" 아코디언에 접어둬서, 처음 보이는 화면은 실제로 생각해야 하는 필드만 남깁니다. 저장 즉시 잠기며(append-only), 이후 저널 화면에서 수정할 수 없습니다. 직전 거래가 손실이었다면 보복매매 경고 배너가 뜹니다.
 - **`/journal/[id]`**: 계획 vs 실제 대조표(불일치 항목은 주황색 강조), 타임라인, AI 코치(프리모템/포스트모템) 진입점을 제공합니다.
-- **`/journal/[id]/close`**: 청산 기록. 청산가·사유와 함께 보유 중 최저/최고가를 직접 입력해 MAE/MFE를 계산합니다(실시간 시세 파이프라인이 없는 `live` 소스의 한계 — 리플레이는 실제 봉 데이터로 정확히 계산됩니다).
+- **`/journal/[id]/close`**: 청산 기록. 데이터 수집기(`scripts/collector`)가 해당 종목·기간을 이미 백필했다면 보유 중 최저/최고가가 실제 일봉 데이터로 자동 채워지고, 아니면 직접 입력합니다(둘 다 MAE/MFE 계산에 사용되며, 자동 채움이어도 필드는 항상 수정 가능합니다).
 - **`/journal`**: 기간·소스(`live`/`replay`)·사분면으로 필터링되는 목록.
 
 | 저널 목록 (`/journal`) | 새 저널 작성 (`/journal/new`) |
@@ -97,13 +97,13 @@
 
 ### M2. 프로세스 스코어카드 — `/scorecard`
 
-프로세스 점수 vs 실현 R 산점도(사분면 배경색), 이번 달 사분면 비중(전월 대비), 프로세스 항목별 평균(가장 약한 항목 강조), 프로세스-결과 피어슨 상관계수를 보여줍니다.
+프로세스 점수 vs 실현 R 산점도(사분면 배경색), 이번 달 사분면 비중(전월 대비), 프로세스 항목별 평균(가장 약한 항목 강조), 프로세스-결과 피어슨 상관계수를 보여줍니다. 거래 기록이 아직 없다면 "샘플로 미리보기"로 40건의 가상 거래를 채운 화면을 먼저 볼 수 있습니다(실제 데이터가 아님을 배너로 항상 표시).
 
 ![프로세스 스코어카드](docs/screenshots/scorecard.jpg)
 
 ### M3. R-multiple 대시보드 — `/metrics`
 
-승률·기대값·Profit Factor·SQN·최대 연속 손실 등 핵심 지표(표본 30건 미만은 신뢰구간과 함께 흐리게 표시), R 분포 히스토그램, 누적 R 곡선, 켈리 게이지.
+승률·기대값·Profit Factor·SQN·최대 연속 손실 등 핵심 지표(표본 30건 미만은 신뢰구간과 함께 흐리게 표시), R 분포 히스토그램, 누적 R 곡선, 켈리 게이지, 여기에도 "샘플로 미리보기" 토글이 있습니다. CSV로 임포트한 거래는 R-multiple 통계에서 제외되지만, 별도 카드에서 승률·손익만 따로 집계해 보여줍니다.
 
 ![R-multiple 대시보드 — 표본 0건이라 "통계적 판단에는 최소 30건 필요" 경고가 표시된 상태](docs/screenshots/metrics.jpg)
 
@@ -163,7 +163,8 @@ SM-2 알고리즘(1→3→7→16→35일 간격)으로 리스크관리·행동�
 
 ### 부가 기능
 
-- **`/settings`** — 계좌 규모, 기본/최대 리스크%, 수수료·세금·슬리피지, 전체 데이터 JSON 내보내기.
+- **`/settings`** — 계좌 규모, 기본/최대 리스크%, 수수료·세금·슬리피지, 주간 요약 이메일 수신 여부, 전체 데이터 JSON/CSV 내보내기.
+- **주간 요약 이메일** — `RESEND_API_KEY`가 설정되어 있으면 매주 월요일 08:00 KST에 이번 주 프로세스 점수(전주 대비)·복습 대기 카드 수·진행 중인 AI 코치 실험 준수율을 이메일로 요약해 보냅니다(`app/api/cron/weekly-digest`, `.github/workflows/weekly-digest.yml`). `/settings`에서 언제든 끌 수 있습니다.
 - **`/import`** — 증권사 CSV(EUC-KR 인코딩 지원)를 업로드하고 컬럼을 매핑해 과거 거래를 임포트합니다. 사전 계획이 없는 거래이므로 프로세스 점수는 매기지 않고 "사전 계획 없음" 태그가 자동으로 붙습니다.
 
 | 설정 (`/settings`) | CSV 임포트 (`/import`) |
@@ -196,18 +197,19 @@ trader-lab/
 │   ├── settings/, import/           # 설정, CSV 임포트
 │   └── api/{backtest,calibration,export,replay}/  # Route Handlers
 ├── lib/
-│   ├── domain/                      # 순수 함수 15개 모듈, 전부 .test.ts 보유
+│   ├── domain/                      # 순수 함수 17개 모듈, 전부 .test.ts 보유
 │   │   ├── types.ts, money.ts, r-multiple.ts, process-score.ts, metrics.ts
 │   │   ├── bias-metrics.ts, calibration.ts, monte-carlo.ts, counterfactual.ts
 │   │   ├── replay.ts, indicators.ts, rule-dsl.ts, backtest.ts
-│   │   ├── coach.ts, drills.ts, srs.ts
+│   │   ├── coach.ts, drills.ts, srs.ts, price-range.ts, sample-data.ts
 │   ├── queries/                     # DB 접근 (Drizzle, 사용자 id로 명시적 필터링)
 │   ├── db/{schema.ts,index.ts,mappers.ts}
-│   ├── supabase/{client,server,middleware}.ts
+│   ├── supabase/{client,server,middleware,admin}.ts  # admin = 서비스 롤 (주간 이메일 발송용)
 │   ├── validation/journal.ts        # zod 스키마
-│   ├── csv.ts                       # RFC4180 CSV 파서 (CSV 임포트용)
+│   ├── csv.ts                       # RFC4180 CSV 파서/직렬화 (임포트·내보내기 공용)
+│   ├── email.ts                     # 주간 요약 이메일 본문 생성 + Resend 발송
 │   └── labels.ts                    # 한글 표시 레이블
-├── drizzle/migrations/              # 스키마 + RLS/트리거 마이그레이션 (0000~0004)
+├── drizzle/migrations/              # 스키마 + RLS/트리거 마이그레이션 (0000~0006)
 ├── scripts/
 │   ├── collector/                   # Python 데이터 수집기 (자체 README)
 │   ├── seed-ohlcv.mjs                # 리플레이/백테스트용 합성 시세 데이터
@@ -244,6 +246,9 @@ cp .env.example .env.local
 | `DATABASE_URL` | Project Settings → Database → Connect → ORM → Drizzle | 비밀번호의 특수문자는 URL 인코딩 필요(예: `@` → `%40`) |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) | **서버 전용.** `/api/ai/coach`(M10 AI 코치)에서만 사용 |
 | `NEXT_PUBLIC_SITE_URL` | 배포된 실제 도메인 | 매직 링크 이메일의 리다이렉트 주소를 만드는 데 사용(`app/(auth)/login/actions.ts`). **로컬 개발에서는 비워두면 `http://localhost:3000`으로 자동 대체되어 필요 없지만, Vercel 등에 배포할 때는 반드시 실제 배포 URL로 설정해야 합니다** — 설정하지 않으면 매직 링크가 `localhost`로 연결을 시도해 개발자 외에는 아무도 로그인할 수 없습니다(실제로 겪은 문제). |
+| `RESEND_KEY` | [resend.com](https://resend.com) (무료 티어: 월 3,000통) | **서버 전용, 선택.** 주간 요약 이메일(`/api/cron/weekly-digest`)에 사용. 없으면 크론이 에러 없이 조용히 건너뜁니다. |
+| `RESEND_FROM_EMAIL` | Resend에서 인증한 발신 도메인 | 선택. 기본값은 Resend의 테스트용 `onboarding@resend.dev`. |
+| `CRON_SECRET` | 직접 생성 (예: `openssl rand -hex 32`) | **서버 전용, 선택.** GitHub Actions Secrets에 동일한 값을 등록해 `/api/cron/weekly-digest`를 인증하는 데 사용. |
 
 또한 Supabase 대시보드 **Authentication → URL Configuration → Redirect URLs**에 아래를 추가해야 매직 링크 로그인이 동작합니다(로컬 개발용 + 배포 도메인용 모두):
 
@@ -289,7 +294,7 @@ npm run dev
 직접 새로 배포하는 경우 체크리스트:
 
 1. `vercel link`로 프로젝트 연결 (소문자 프로젝트명 필요).
-2. 위 환경변수 5개 + **`NEXT_PUBLIC_SITE_URL`(실제 배포 도메인, 필수)**을 `vercel env add <이름> production`으로 등록. `NEXT_PUBLIC_*` 값은 빌드 시점에 번들에 박히므로 값을 바꾸면 반드시 재배포해야 합니다.
+2. 위 필수 환경변수 5개 + **`NEXT_PUBLIC_SITE_URL`(실제 배포 도메인, 필수)**을 `vercel env add <이름> production`으로 등록. `RESEND_KEY`/`RESEND_FROM_EMAIL`/`CRON_SECRET`은 주간 요약 이메일을 쓸 때만 선택적으로 추가하면 됩니다. `NEXT_PUBLIC_*` 값은 빌드 시점에 번들에 박히므로 값을 바꾸면 반드시 재배포해야 합니다.
 3. Supabase 대시보드에 배포 도메인의 `/auth/callback`과 `/**`를 Redirect URLs에 추가.
 4. `vercel --prod`로 배포.
 5. Supabase 무료 플랜은 내장 이메일 발송 한도가 시간당 매우 낮습니다(수 통 수준). 여러 계정으로 자주 테스트해야 한다면 Authentication → Emails에서 커스텀 SMTP(Resend, Gmail 등)를 연결하는 것을 권장합니다.
@@ -345,13 +350,14 @@ python daily.py                                          # 이후 매일 증분 
 
 각 기능 구현 중 실제로 부딪힌 제약과, 무리하게 우회하지 않고 정직하게 남겨둔 지점들입니다.
 
-- **`live` 소스 실시간 시세 없음**: 저널 청산 시 MAE/MFE는 트레이더가 직접 입력한 보유 중 최저/최고가로 계산합니다(리플레이는 실제 봉 데이터로 정확히 계산됨). 홈 화면의 "진행 중 포지션"도 계획 가격만 보여주고 현재가 대비 위치는 표시하지 않습니다.
+- **`live` 소스 실시간(장중) 시세 없음**: MAE/MFE는 데이터 수집기가 백필한 종목·기간이면 일봉으로 자동 계산되지만(장중 순간 고점/저점은 반영 안 됨), 백필되지 않은 종목은 여전히 직접 입력합니다. 홈 화면의 "진행 중 포지션"도 계획 가격만 보여주고 현재가 대비 위치는 표시하지 않습니다.
 - **리플레이 레벨 4/5 일부 미구현**: 60분봉 전환(L4)과 코스피 지수 오버레이(L5)는 분봉·지수 데이터 파이프라인이 아직 없어 준비 중 상태입니다. 캔들·이동평균·거래량(L1~L3)은 완전히 동작합니다.
 - **FOMO 편향 감지는 감정 태그 기반 근사치**: 실시간 분봉 없이 "당일 급등 여부"를 판단할 수 없어, 진입 시 스스로 붙인 "FOMO" 감정 태그를 대리 지표로 씁니다.
 - **백테스터는 롱 온리, 종목당 동시 포지션 1개**: 숏 전략이나 종목당 분할 진입은 지원하지 않습니다.
 - **투자자 수급 데이터는 선택 사항**: KRX 로그인(KRX_ID/KRX_PW) 없이는 수집되지 않으며, 없어도 나머지 모든 기능은 정상 동작합니다.
 - **CSV 임포트 거래는 R-multiple 통계에서 제외**: 사전에 선언된 손절가가 없으므로 `realizedR`을 계산하지 않습니다(실현 손익 금액은 계산해 보여줍니다).
 - **Web Worker 미사용**: 몬테카를로 시뮬레이션은 스펙상 Web Worker 실행이 권장되지만, 이 프로젝트의 Next.js 빌드 설정에서 `new Worker(new URL(...))` 패턴이 실제 서빙 가능한 청크로 번들링되지 않는 것을 확인해 메인 스레드 실행으로 대체했습니다(1,000회×200거래×5구간 실측 약 37ms로 체감상 문제 없음).
+- **주간 요약 이메일은 기본 발신 도메인(`onboarding@resend.dev`) 사용 시 스팸함으로 갈 수 있음**: 실제로 발송 테스트를 해보니 Gmail이 이 메일을 스팸으로 분류했습니다(발신 도메인 미인증 탓 — 내용 자체는 정상 도착). Resend에서 자기 도메인을 인증하고 `RESEND_FROM_EMAIL`을 그 도메인으로 설정하면 해결됩니다.
 
 ## 진행 상황
 

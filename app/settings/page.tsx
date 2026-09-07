@@ -123,6 +123,19 @@ export default async function SettingsPage({
               </div>
             </div>
 
+            <div className="flex items-center gap-2">
+              <input
+                id="weeklyDigestEnabled"
+                name="weeklyDigestEnabled"
+                type="checkbox"
+                defaultChecked={profile?.weeklyDigestEnabled ?? true}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="weeklyDigestEnabled" className="font-normal">
+                주간 요약 이메일 받기 (이번 주 프로세스 점수, 복습 대기 카드 수 등)
+              </Label>
+            </div>
+
             {saved ? (
               <p className="text-sm text-emerald-600">저장되었습니다.</p>
             ) : null}

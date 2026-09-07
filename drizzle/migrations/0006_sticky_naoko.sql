@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "weekly_digest_enabled" boolean DEFAULT true NOT NULL;

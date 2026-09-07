@@ -29,6 +29,7 @@ export async function updateSettings(formData: FormData) {
   const feeBps = parsePositiveNumber(formData.get("feeBps"));
   const taxBps = parsePositiveNumber(formData.get("taxBps"));
   const slippageBps = parsePositiveNumber(formData.get("slippageBps"));
+  const weeklyDigestEnabled = formData.get("weeklyDigestEnabled") === "on";
 
   if (
     accountSize === null ||
@@ -51,6 +52,7 @@ export async function updateSettings(formData: FormData) {
       feeBps,
       taxBps,
       slippageBps,
+      weeklyDigestEnabled,
     })
     .where(eq(profiles.id, user.id));
 

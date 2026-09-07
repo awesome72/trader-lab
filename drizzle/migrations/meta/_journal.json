@@ -43,6 +43,13 @@
       "when": 1788769104372,
       "tag": "0005_fast_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788770852272,
+      "tag": "0006_sticky_naoko",
+      "breakpoints": true
     }
   ]
 }
