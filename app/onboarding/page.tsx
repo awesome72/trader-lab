@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
-import { getOnboardingStatus, hasStartedReplaySession } from "@/lib/queries/onboarding";
+import { getOnboardingStatus, getOnboardingStep, hasStartedReplaySession } from "@/lib/queries/onboarding";
 import { createClient } from "@/lib/supabase/server";
-import { saveOnboardingStep1 } from "./actions";
+import { advanceOnboardingStep, saveOnboardingStep1 } from "./actions";
 import { RMultipleDemo } from "./r-multiple-demo";
 import { OnboardingQuiz } from "./onboarding-quiz";
 
@@ -21,7 +21,6 @@ export default async function OnboardingPage({
   searchParams: Promise<{ step?: string; error?: string }>;
 }) {
   const { step: stepParam, error } = await searchParams;
-  const step = Math.min(TOTAL_STEPS, Math.max(1, Number(stepParam) || 1));
 
   const supabase = await createClient();
   const {
@@ -35,6 +34,13 @@ export default async function OnboardingPage({
   if (status.completed) {
     redirect("/");
   }
+
+  // An explicit ?step= always wins (lets a trader jump back manually); a
+  // bare "/onboarding" visit (e.g. the home banner) resumes the last step
+  // they reached instead of restarting at step 1.
+  const step = stepParam
+    ? Math.min(TOTAL_STEPS, Math.max(1, Number(stepParam) || 1))
+    : await getOnboardingStep(user.id);
 
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, user.id));
   const hasReplay = step === 4 ? await hasStartedReplaySession(user.id) : false;
@@ -84,7 +90,9 @@ export default async function OnboardingPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <RMultipleDemo />
-            <Button render={<Link href="/onboarding?step=3" />} className="w-full">다음</Button>
+            <form action={advanceOnboardingStep.bind(null, 3)}>
+              <Button type="submit" className="w-full">다음</Button>
+            </form>
           </CardContent>
         </Card>
       ) : null}
@@ -108,7 +116,9 @@ export default async function OnboardingPage({
             <Button variant="outline" render={<Link href="/journal/new" target="_blank" />} className="w-full">
               저널 작성해보기 (새 탭)
             </Button>
-            <Button render={<Link href="/onboarding?step=4" />} className="w-full">다음</Button>
+            <form action={advanceOnboardingStep.bind(null, 4)}>
+              <Button type="submit" className="w-full">다음</Button>
+            </form>
           </CardContent>
         </Card>
       ) : null}
@@ -130,9 +140,9 @@ export default async function OnboardingPage({
             {hasReplay ? (
               <>
                 <p className="text-sm text-emerald-600">세션을 시작한 기록이 확인되었습니다.</p>
-                <Button render={<Link href="/onboarding?step=5" />} className="w-full">
-                  다음
-                </Button>
+                <form action={advanceOnboardingStep.bind(null, 5)}>
+                  <Button type="submit" className="w-full">다음</Button>
+                </form>
               </>
             ) : (
               <>

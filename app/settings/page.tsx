@@ -140,9 +140,12 @@ export default async function SettingsPage({
           <CardTitle className="text-sm">내 데이터</CardTitle>
           <CardDescription>저널, 거래, 캘리브레이션, 드릴, 복습 카드 등 모든 데이터를 JSON으로 내려받습니다.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <Button variant="outline" render={<a href="/api/export" />} className="w-full">
             전체 데이터 내보내기 (JSON)
+          </Button>
+          <Button variant="outline" render={<a href="/api/export/csv" />} className="w-full">
+            거래 내역만 내보내기 (CSV, 엑셀/구글시트용)
           </Button>
         </CardContent>
       </Card>

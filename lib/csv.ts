@@ -57,3 +57,20 @@ export function parseCsv(text: string): ParsedCsv {
   const [headers, ...dataRows] = nonEmptyRows;
   return { headers: headers ?? [], rows: dataRows };
 }
+
+// Inverse of parseCsv, for data export (docs/SPEC.md-style "내 데이터" CSV
+// download). Quotes any field containing a comma, quote, or newline, and
+// doubles up embedded quotes — same escaping rules parseCsv already reads.
+function escapeCsvField(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+export function toCsv(headers: string[], rows: (string | number | null | undefined)[][]): string {
+  const lines = [headers, ...rows].map((row) =>
+    row.map((cell) => escapeCsvField(cell === null || cell === undefined ? "" : String(cell))).join(",")
+  );
+  return lines.join("\r\n");
+}

@@ -12,6 +12,8 @@ import {
   tradeEvents,
   trades,
 } from "@/lib/db/schema";
+import { dbTradeToDomain } from "@/lib/db/mappers";
+import { toCsv } from "@/lib/csv";
 
 // docs/SPEC.md Phase 10-4: "전체 데이터 JSON 내보내기 (사용자 소유권 보장)" —
 // every table that stores something the user created or declared, scoped to
@@ -51,4 +53,33 @@ export async function exportAllUserData(userId: string) {
     backtestRuns: backtestRunRows,
     replaySessions: replaySessionRows,
   };
+}
+
+const TRADE_CSV_HEADERS = [
+  "id", "source", "ticker", "status", "direction",
+  "entryAt", "entryPrice", "quantity",
+  "thesis", "setup", "horizon", "invalidation", "stopPrice", "stopBasis",
+  "target1Price", "target2Price", "confidence", "plannedRiskPct",
+  "exitAt", "exitPrice", "exitReason",
+  "realizedR", "realizedPnl", "maeR", "mfeR",
+  "processScore", "quadrant", "emotionTags",
+];
+
+// Spreadsheet-friendly counterpart to exportAllUserData's JSON dump — just
+// the trades table (the one most people actually want to pivot/chart in
+// Excel/Sheets), flattened to one row per trade.
+export async function exportTradesAsCsv(userId: string): Promise<string> {
+  const tradeRows = (await db.select().from(trades).where(eq(trades.userId, userId))).map(dbTradeToDomain);
+
+  const rows = tradeRows.map((t) => [
+    t.id, t.source, t.ticker, t.status, t.direction,
+    t.entryAt, t.entryPrice, t.quantity,
+    t.thesis, t.setup, t.horizon, t.invalidation, t.stopPrice, t.stopBasis,
+    t.target1Price, t.target2Price, t.confidence, t.plannedRiskPct,
+    t.exitAt, t.exitPrice, t.exitReason,
+    t.realizedR, t.realizedPnl, t.maeR, t.mfeR,
+    t.processScore, t.quadrant, t.emotionTags.join("|"),
+  ]);
+
+  return toCsv(TRADE_CSV_HEADERS, rows);
 }

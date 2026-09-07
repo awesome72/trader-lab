@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
-import { markOnboardingComplete } from "@/lib/queries/onboarding";
+import { markOnboardingComplete, saveOnboardingStep } from "@/lib/queries/onboarding";
 import { createClient } from "@/lib/supabase/server";
 
 function parsePositiveNumber(value: FormDataEntryValue | null): number | null {
@@ -33,7 +33,25 @@ export async function saveOnboardingStep1(formData: FormData) {
   }
 
   await db.update(profiles).set({ accountSize, defaultRiskPct, maxRiskPct }).where(eq(profiles.id, user.id));
+  await saveOnboardingStep(user.id, 2);
   redirect("/onboarding?step=2");
+}
+
+// Bound with the target step in app/onboarding/page.tsx (e.g.
+// `advanceOnboardingStep.bind(null, 3)`) so a plain form submit can both
+// persist progress and navigate — lets a trader resume mid-onboarding from
+// the home banner's bare "/onboarding" link instead of restarting at step 1.
+export async function advanceOnboardingStep(nextStep: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  await saveOnboardingStep(user.id, nextStep);
+  redirect(`/onboarding?step=${nextStep}`);
 }
 
 export async function completeOnboarding(): Promise<{ ok: true } | { ok: false; error: string }> {
