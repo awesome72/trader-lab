@@ -3,6 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,50 +225,6 @@ export function JournalForm({
               <p className="text-sm text-destructive">{errors.thesis.message}</p>
             ) : null}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>셋업 유형</Label>
-              <Controller
-                control={control}
-                name="setup"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(SETUP_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>시간 지평</Label>
-              <Controller
-                control={control}
-                name="horizon"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(HORIZON_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -293,42 +255,19 @@ export function JournalForm({
               </Badge>
             ) : null}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="stopPrice">손절가</Label>
-              <Input
-                id="stopPrice"
-                type="number"
-                step="any"
-                {...register("stopPrice", { valueAsNumber: true })}
-              />
-              {errors.stopPrice ? (
-                <p className="text-sm text-destructive">
-                  {errors.stopPrice.message}
-                </p>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label>손절 근거</Label>
-              <Controller
-                control={control}
-                name="stopBasis"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STOP_BASIS_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="stopPrice">손절가</Label>
+            <Input
+              id="stopPrice"
+              type="number"
+              step="any"
+              {...register("stopPrice", { valueAsNumber: true })}
+            />
+            {errors.stopPrice ? (
+              <p className="text-sm text-destructive">
+                {errors.stopPrice.message}
+              </p>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -338,29 +277,16 @@ export function JournalForm({
           <CardTitle>기대</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="target1Price">목표가 1</Label>
-              <Input
-                id="target1Price"
-                type="number"
-                step="any"
-                {...register("target1Price", {
-                  setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="target2Price">목표가 2 (선택)</Label>
-              <Input
-                id="target2Price"
-                type="number"
-                step="any"
-                {...register("target2Price", {
-                  setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="target1Price">목표가 1</Label>
+            <Input
+              id="target1Price"
+              type="number"
+              step="any"
+              {...register("target1Price", {
+                setValueAs: (v) => (v === "" ? undefined : Number(v)),
+              })}
+            />
           </div>
 
           {plannedR !== null ? (
@@ -438,46 +364,140 @@ export function JournalForm({
         <CardHeader>
           <CardTitle>상태</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>감정 태그</Label>
-            <Controller
-              control={control}
-              name="emotionTags"
-              render={({ field }) => (
-                <ToggleGroup
-                  multiple
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex-wrap"
-                >
-                  {EMOTION_TAGS.map((tag) => (
-                    <ToggleGroupItem key={tag.value} value={tag.value}>
-                      {tag.label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="conditionScore">수면/컨디션 (1~5)</Label>
-            <Input
-              id="conditionScore"
-              type="number"
-              min={1}
-              max={5}
-              {...register("conditionScore", {
-                setValueAs: (v) => (v === "" ? undefined : Number(v)),
-              })}
-            />
-          </div>
+        <CardContent>
           <p className="text-sm text-muted-foreground">
             직전 거래 손익:{" "}
             {prevTradeRealizedR !== null
               ? `${prevTradeRealizedR.toFixed(2)}R`
               : "기록 없음"}
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <Accordion>
+            <AccordionItem value="advanced">
+              <AccordionTrigger>고급 옵션 (선택, 건너뛰면 기본값이 적용됩니다)</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>셋업 유형</Label>
+                      <Controller
+                        control={control}
+                        name="setup"
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(SETUP_LABELS).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>시간 지평</Label>
+                      <Controller
+                        control={control}
+                        name="horizon"
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(HORIZON_LABELS).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>손절 근거</Label>
+                    <Controller
+                      control={control}
+                      name="stopBasis"
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(STOP_BASIS_LABELS).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="target2Price">목표가 2</Label>
+                    <Input
+                      id="target2Price"
+                      type="number"
+                      step="any"
+                      {...register("target2Price", {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>감정 태그</Label>
+                    <Controller
+                      control={control}
+                      name="emotionTags"
+                      render={({ field }) => (
+                        <ToggleGroup
+                          multiple
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex-wrap"
+                        >
+                          {EMOTION_TAGS.map((tag) => (
+                            <ToggleGroupItem key={tag.value} value={tag.value}>
+                              {tag.label}
+                            </ToggleGroupItem>
+                          ))}
+                        </ToggleGroup>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="conditionScore">수면/컨디션 (1~5)</Label>
+                    <Input
+                      id="conditionScore"
+                      type="number"
+                      min={1}
+                      max={5}
+                      {...register("conditionScore", {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
