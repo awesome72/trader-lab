@@ -13,6 +13,7 @@ import {
   expectancyOf,
   winRateOf,
 } from "@/lib/domain/metrics";
+import { generateSampleTrades } from "@/lib/domain/sample-data";
 import type { SourceType } from "@/lib/domain/types";
 import { PERIOD_DAYS, getFilteredTrades } from "@/lib/queries/trades";
 import { createClient } from "@/lib/supabase/server";
@@ -25,9 +26,10 @@ function fmtR(v: number | null): string {
 export default async function MetricsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; source?: string }>;
+  searchParams: Promise<{ period?: string; source?: string; sample?: string }>;
 }) {
   const params = await searchParams;
+  const sampleMode = params.sample === "1";
 
   const supabase = await createClient();
   const {
@@ -43,7 +45,9 @@ export default async function MetricsPage({
     .where(eq(profiles.id, user.id));
 
   const source = (params.source as SourceType) ?? "live";
-  const trades = await getFilteredTrades(user.id, { period: params.period, source });
+  const trades = sampleMode
+    ? generateSampleTrades(new Date())
+    : await getFilteredTrades(user.id, { period: params.period, source });
 
   const metrics = calcMetrics(trades);
   const rs = trades
@@ -71,9 +75,17 @@ export default async function MetricsPage({
         <span className="ml-4 text-sm text-muted-foreground">데이터:</span>
         <FilterLink basePath="/metrics" searchParams={params} paramKey="source" value={undefined} label="실전" active={!params.source || params.source === "live"} />
         <FilterLink basePath="/metrics" searchParams={params} paramKey="source" value="replay" label="리플레이" active={params.source === "replay"} />
+        <FilterLink basePath="/metrics" searchParams={params} paramKey="sample" value={sampleMode ? undefined : "1"} label={sampleMode ? "실제 데이터로 돌아가기" : "샘플로 미리보기"} active={sampleMode} />
       </div>
 
-      {metrics.insufficientSample ? (
+      {sampleMode ? (
+        <div className="rounded-md border border-blue-400 bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
+          샘플 데이터로 미리보고 있습니다. 실제 계정 데이터가 아니며, 화면이
+          거래가 쌓였을 때 어떻게 보이는지 보여주기 위한 가상의 데이터입니다.
+        </div>
+      ) : null}
+
+      {!sampleMode && metrics.insufficientSample ? (
         <div className="rounded-md border bg-muted p-3 text-sm text-muted-foreground">
           표본 {metrics.n}건. 통계적 판단에는 최소 30건이 필요합니다. 아래
           수치는 참고용입니다.

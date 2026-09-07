@@ -51,7 +51,13 @@ export interface ScatterPoint {
   quadrant: Quadrant;
 }
 
-export function ProcessScoreScatter({ points }: { points: ScatterPoint[] }) {
+export function ProcessScoreScatter({
+  points,
+  disableClick = false,
+}: {
+  points: ScatterPoint[];
+  disableClick?: boolean;
+}) {
   const router = useRouter();
   const maxAbsR = Math.max(1, ...points.map((p) => Math.abs(p.realizedR)));
   const yBound = Math.ceil(maxAbsR * 1.1);
@@ -100,10 +106,11 @@ export function ProcessScoreScatter({ points }: { points: ScatterPoint[] }) {
           <Scatter
             data={points}
             onClick={(point) => {
+              if (disableClick) return;
               const p = point as unknown as ScatterPoint;
               if (p?.id) router.push(`/journal/${p.id}`);
             }}
-            cursor="pointer"
+            cursor={disableClick ? "default" : "pointer"}
           >
             {points.map((p) => (
               <Cell key={p.id} fill={QUADRANT_COLORS[p.quadrant]} />
