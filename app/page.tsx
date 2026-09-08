@@ -22,6 +22,7 @@ const AXIS_LABELS: Record<keyof BiasRadar, string> = {
 };
 
 const QUICK_LINKS: { href: string; label: string }[] = [
+  { href: "/guide", label: "사용 흐름 보기" },
   { href: "/journal", label: "저널" },
   { href: "/scorecard", label: "스코어카드" },
   { href: "/metrics", label: "R-멀티플" },
