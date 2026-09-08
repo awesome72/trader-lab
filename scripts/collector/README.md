@@ -16,11 +16,24 @@ pip install -r requirements.txt
 
 ## 실행 순서
 
+`backfill.py`/`daily.py`는 기본적으로 **추적 대상(tracked) 종목만** 수집합니다 —
+전체 KOSPI/KOSDAQ 약 2,765종목이 아니라, 실제 거래대금 기준 상위 약
+300종목(+ 합성 테스트 종목)만 유지해 저장공간을 실제 트레이더가 접할 법한
+규모로 제한합니다(`ticker_master.is_tracked`, `select_universe.py`). 처음
+설정할 때만 아래 순서로 3단계를 거칩니다:
+
 ```bash
-python master.py                                  # 종목 마스터 갱신 (먼저 실행)
-python backfill.py --start 2022-01-01 --end 2026-01-01   # 최초 1회, 기간 지정
-python daily.py                                    # 이후 매일 증분 (cron)
+python master.py                                        # 1. 종목 마스터 갱신
+python backfill.py --all-tickers --start 2026-08-01      # 2. 전종목 짧은 기간(랭킹용 원자재)
+python select_universe.py --top 300                      # 3. 거래대금 상위 종목만 추적 대상으로 지정 (나머지는 자동 삭제)
+python backfill.py                                       # 4. 추적 대상만 2년 전체 기간으로 본 백필
+python daily.py                                          # 이후 매일 증분 (cron, 추적 대상만)
 ```
+
+이미 추적 대상이 정해진 뒤에는 2~4단계를 반복할 필요 없이 `daily.py`만
+주기적으로 실행하면 됩니다. 랭킹 기준을 바꾸고 싶으면 언제든
+`select_universe.py --top N`을 다시 실행하세요 — 새로 빠진 종목의 데이터는
+자동으로 삭제되고, 새로 들어온 종목은 다음 `backfill.py` 실행 때 채워집니다.
 
 ## 중요한 제약 (실제로 검증함)
 
@@ -41,6 +54,12 @@ python daily.py                                    # 이후 매일 증분 (cron)
 - 상장폐지 감지는 근사치입니다: 어제까지 `ticker_master`에 있던 종목이
   오늘자 활성 목록에서 사라지면 그 날짜로 `delisted_at`을 채웁니다(정확한
   상장폐지일이 아니라 "수집기가 처음 사라짐을 인지한 날").
+- **실제 시가총액은 로그인 없이 구할 수 없습니다**: `FinanceDataReader.StockListing('KRX-DESC')`에는
+  시가총액 컬럼이 없고, pykrx의 날짜별 시가총액 조회도 KRX 로그인이 필요한
+  전종목 일괄조회 API에 속합니다. 그래서 `select_universe.py`는 이미 수집된
+  `ohlcv_daily`의 실제 평균 거래대금(종가×거래량)으로 "주요 종목"을
+  추립니다 — 실제로 랭킹해보니 삼성전자·SK하이닉스·현대차·NAVER 등이
+  최상위로 나와 시가총액 대용치로 충분히 신뢰할 만함을 확인했습니다.
 
 ## GitHub Actions
 

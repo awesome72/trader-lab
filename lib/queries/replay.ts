@@ -49,7 +49,10 @@ async function findReplayCandidates(
   filters: ReplayFilters,
   minBars: number
 ): Promise<{ candidates: ReplayCandidate[]; datesByTicker: Map<string, string[]> }> {
-  const conditions = [];
+  // Only the tracked set (scripts/collector/select_universe.py) ever has
+  // ohlcv_daily rows — skips an empty per-ticker query for every untracked
+  // ticker_master row otherwise.
+  const conditions = [eq(tickerMaster.isTracked, true)];
   if (filters.market) conditions.push(eq(tickerMaster.market, filters.market));
   if (filters.minMarketCap !== undefined) {
     conditions.push(gte(tickerMaster.marketCap, filters.minMarketCap));
@@ -61,7 +64,7 @@ async function findReplayCandidates(
   const tickers = await db
     .select({ ticker: tickerMaster.ticker })
     .from(tickerMaster)
-    .where(conditions.length > 0 ? and(...conditions) : undefined);
+    .where(and(...conditions));
 
   const datesByTicker = new Map<string, string[]>();
   const candidates: ReplayCandidate[] = [];

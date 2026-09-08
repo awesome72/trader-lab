@@ -317,14 +317,16 @@ npm run dev
 
 ## 데이터 수집기 (Python)
 
-`scripts/collector/`는 Node 앱과 독립적으로 동작하는 Python 스크립트로, 같은 Supabase Postgres에 실제 KOSPI/KOSDAQ 시세를 upsert합니다. 자세한 설치·실행법과 실제로 검증된 제약(전종목 일괄조회는 KRX 로그인이 필요하다는 점, 투자자 수급은 KRX_ID/KRX_PW가 있어야 수집된다는 점 등)은 [`scripts/collector/README.md`](scripts/collector/README.md)에 있습니다. 요약:
+`scripts/collector/`는 Node 앱과 독립적으로 동작하는 Python 스크립트로, 같은 Supabase Postgres에 실제 KOSPI/KOSDAQ 시세를 upsert합니다. 전체 ~2,765개 종목이 아니라 **실제 거래대금 기준 상위 약 300종목만 추적**해 저장공간을 제한합니다(`select_universe.py` — 시가총액은 로그인 없이 구할 수 없어 실제 거래대금을 대용 지표로 사용). 자세한 설치·실행법과 실제로 검증된 제약은 [`scripts/collector/README.md`](scripts/collector/README.md)에 있습니다. 요약(최초 설정):
 
 ```bash
 cd scripts/collector
 pip install -r requirements.txt
-python master.py                                        # 종목 마스터 갱신 (먼저 실행)
-python backfill.py --start 2022-01-01 --end 2026-01-01   # 최초 1회 백필 (시간이 오래 걸릴 수 있음)
-python daily.py                                          # 이후 매일 증분 수집
+python master.py                                    # 1. 종목 마스터 갱신
+python backfill.py --all-tickers --start 2026-08-01  # 2. 전종목 짧은 기간(랭킹용)
+python select_universe.py --top 300                  # 3. 거래대금 상위 종목만 추적 지정 (나머지 자동 삭제)
+python backfill.py                                   # 4. 추적 종목만 2년 전체 백필
+python daily.py                                      # 이후 매일 증분 수집 (추적 종목만)
 ```
 
 `.github/workflows/collector.yml`이 평일 18:00 KST에 `daily.py`를 자동 실행합니다(저장소 Secrets에 `DATABASE_URL` 필요, `KRX_ID`/`KRX_PW`는 투자자 수급용 선택 사항). 실제 시세로 백필하기 전까지는 4단계의 `db:seed-*` 스크립트로 만든 합성 데이터로 모든 기능을 테스트할 수 있습니다.

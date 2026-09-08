@@ -102,6 +102,64 @@ def get_all_tickers(conn) -> list[str]:
         return [row[0] for row in cur.fetchall()]
 
 
+def get_tracked_tickers(conn) -> list[str]:
+    """The bounded ticker set backfill.py maintains OHLCV history for (see
+    select_universe.py) — never the full ~2,765-ticker KOSPI/KOSDAQ
+    universe, to keep storage proportional to what a trader would actually
+    encounter rather than every listing. Includes delisted-but-tracked
+    tickers on purpose (backfill.py's job is historical depth, and
+    excluding them would reintroduce survivorship bias — see
+    daily.py/get_tracked_active_tickers for the incremental-update case,
+    which should skip them instead)."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT ticker FROM ticker_master WHERE is_tracked = true ORDER BY ticker")
+        return [row[0] for row in cur.fetchall()]
+
+
+def get_tracked_active_tickers(conn) -> list[str]:
+    """Same as get_tracked_tickers but excludes delisted names — what
+    daily.py should loop over, since fetching new price data for a
+    delisted stock can't return anything."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT ticker FROM ticker_master WHERE is_tracked = true AND delisted_at IS NULL ORDER BY ticker"
+        )
+        return [row[0] for row in cur.fetchall()]
+
+
+def set_tracked_tickers(conn, tickers: list[str]) -> None:
+    """Replaces the tracked set wholesale (untracks everything else first) —
+    select_universe.py's own job is to decide the *entire* set each time it
+    runs, not to incrementally add to it."""
+    with conn.cursor() as cur:
+        cur.execute("UPDATE ticker_master SET is_tracked = false WHERE is_tracked = true")
+        if tickers:
+            cur.execute("UPDATE ticker_master SET is_tracked = true WHERE ticker = ANY(%s)", (tickers,))
+    conn.commit()
+
+
+def delete_ohlcv_for_untracked(conn) -> int:
+    """Reclaims storage from tickers select_universe.py has just dropped out
+    of the tracked set (e.g. after re-ranking). Safe to call any time —
+    tracked tickers are always re-fetchable via backfill.py."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            DELETE FROM ohlcv_daily
+            WHERE ticker IN (SELECT ticker FROM ticker_master WHERE is_tracked = false)
+            """
+        )
+        ohlcv_count = cur.rowcount
+        cur.execute(
+            """
+            DELETE FROM investor_flow
+            WHERE ticker IN (SELECT ticker FROM ticker_master WHERE is_tracked = false)
+            """
+        )
+    conn.commit()
+    return ohlcv_count
+
+
 def upsert_ohlcv_daily(conn, ticker: str, rows: list[dict]) -> None:
     """rows: [{d, open, high, low, close, volume, value, adj_close}]"""
     if not rows:

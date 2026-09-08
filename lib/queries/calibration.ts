@@ -79,7 +79,13 @@ function pickRandomIndices(max: number, count: number): number[] {
 // server-side immediately (outcome resolved, predictedProb a placeholder)
 // so the client can never see it — only the 120 masked bars go out.
 export async function createQuizSession(userId: string, count = 20): Promise<QuizQuestion[]> {
-  const tickers = await db.select({ ticker: tickerMaster.ticker }).from(tickerMaster);
+  // Only the tracked set (scripts/collector/select_universe.py) ever has
+  // ohlcv_daily rows — skips an empty per-ticker query for every untracked
+  // ticker_master row otherwise.
+  const tickers = await db
+    .select({ ticker: tickerMaster.ticker })
+    .from(tickerMaster)
+    .where(eq(tickerMaster.isTracked, true));
 
   const candidates: { ticker: string; startIdx: number }[] = [];
   const rowsByTicker = new Map<string, (typeof ohlcvDaily.$inferSelect)[]>();

@@ -88,6 +88,13 @@ export const tickerMaster = pgTable("ticker_master", {
   listedFrom: date("listed_from"),
   delistedAt: date("delisted_at"), // survivorship-bias guard, see docs/SPEC.md C-2
   marketCap: bigint("market_cap", { mode: "number" }),
+  // Whether scripts/collector/{backfill,daily}.py maintain OHLCV history for
+  // this ticker. Real market cap is unavailable without a paid/KRX-login
+  // feed (see scripts/collector/README.md), so scripts/collector/
+  // select_universe.py picks this set by actual average trading value
+  // instead — keeps storage bounded to the tickers a trader would actually
+  // encounter rather than every KOSPI/KOSDAQ listing.
+  isTracked: boolean("is_tracked").notNull().default(false),
 });
 
 export const ohlcvDaily = pgTable(

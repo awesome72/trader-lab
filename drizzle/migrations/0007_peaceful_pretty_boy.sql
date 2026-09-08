@@ -1,0 +1,1 @@
+ALTER TABLE "ticker_master" ADD COLUMN "is_tracked" boolean DEFAULT false NOT NULL;

@@ -1,19 +1,25 @@
-"""지정 기간 전종목 일봉 + 투자자 수급 초기 적재 (docs/SPEC.md Phase 10-3).
+"""지정 기간 종목 일봉 + 투자자 수급 초기 적재 (docs/SPEC.md Phase 10-3).
 
-Run master.py first so ticker_master is populated — this script reads its
-ticker universe from there rather than re-fetching the listing itself.
+Run master.py first so ticker_master is populated. By default this only
+backfills the *tracked* ticker set (see select_universe.py) — a bounded
+~300-ticker universe picked by real trading value, not every one of the
+~2,765 KOSPI/KOSDAQ listings — to keep storage proportional to what a
+trader would actually encounter. Pass --all-tickers for the old
+full-universe behavior (only really useful once, to give
+select_universe.py enough history to rank against — see README.md).
 
 Usage:
     python master.py
     python backfill.py --start 2022-01-01 --end 2026-01-01
-    python backfill.py                      # defaults to the last 2 years
+    python backfill.py                      # defaults to the last 2 years, tracked tickers only
+    python backfill.py --all-tickers --start 2026-08-01   # short full-universe pass, for ranking only
 """
 from __future__ import annotations
 
 import argparse
 import datetime
 
-from db import get_all_tickers, get_connection, krx_credentials_available, upsert_investor_flow, upsert_ohlcv_daily
+from db import get_all_tickers, get_connection, get_tracked_tickers, krx_credentials_available, upsert_investor_flow, upsert_ohlcv_daily
 from fetch import fetch_investor_flow_rows, fetch_ohlcv_rows
 
 
@@ -23,6 +29,11 @@ def parse_args() -> argparse.Namespace:
     today = datetime.date.today().isoformat()
     parser.add_argument("--start", default=two_years_ago, help="YYYY-MM-DD (default: 2 years ago)")
     parser.add_argument("--end", default=today, help="YYYY-MM-DD (default: today)")
+    parser.add_argument(
+        "--all-tickers",
+        action="store_true",
+        help="backfill every ticker_master row instead of just the tracked set (see select_universe.py)",
+    )
     return parser.parse_args()
 
 
@@ -30,9 +41,12 @@ def main() -> None:
     args = parse_args()
     conn = get_connection()
     try:
-        tickers = get_all_tickers(conn)
+        tickers = get_all_tickers(conn) if args.all_tickers else get_tracked_tickers(conn)
         if not tickers:
-            print("ticker_master is empty — run master.py first.")
+            if args.all_tickers:
+                print("ticker_master is empty — run master.py first.")
+            else:
+                print("no tracked tickers yet — run select_universe.py first (see its docstring for setup order).")
             return
 
         collect_flow = krx_credentials_available()

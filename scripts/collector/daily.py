@@ -1,9 +1,10 @@
 """매일 18:00 KST 증분 수집 (docs/SPEC.md Phase 10-3).
 
 Fetches the last 5 calendar days (covers weekends/holidays/any missed run)
-for every active (non-delisted) ticker and upserts — safe to re-run, and
-cheap enough to run daily via the GitHub Actions workflow in
-.github/workflows/collector.yml.
+for every *tracked* ticker (see select_universe.py — a bounded ~300-ticker
+set picked by real trading value, not every KOSPI/KOSDAQ listing) and
+upserts — safe to re-run, and cheap enough to run daily via the GitHub
+Actions workflow in .github/workflows/collector.yml.
 
 Usage: python daily.py
 """
@@ -11,7 +12,7 @@ from __future__ import annotations
 
 import datetime
 
-from db import get_active_tickers, get_connection, krx_credentials_available, upsert_investor_flow, upsert_ohlcv_daily
+from db import get_connection, get_tracked_active_tickers, krx_credentials_available, upsert_investor_flow, upsert_ohlcv_daily
 from fetch import fetch_investor_flow_rows, fetch_ohlcv_rows
 
 LOOKBACK_DAYS = 5
@@ -20,9 +21,9 @@ LOOKBACK_DAYS = 5
 def main() -> None:
     conn = get_connection()
     try:
-        tickers = get_active_tickers(conn)
+        tickers = get_tracked_active_tickers(conn)
         if not tickers:
-            print("ticker_master has no active tickers — run master.py first.")
+            print("no tracked tickers yet — run select_universe.py first (see its docstring for setup order).")
             return
 
         start = (datetime.date.today() - datetime.timedelta(days=LOOKBACK_DAYS)).isoformat()

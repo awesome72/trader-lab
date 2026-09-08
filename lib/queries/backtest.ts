@@ -12,7 +12,11 @@ export interface UniverseFilters {
 }
 
 export async function getUniverseBars(filters: UniverseFilters): Promise<TickerUniverseEntry[]> {
-  const conditions = [];
+  // Only scripts/collector/backfill.py's tracked set (see
+  // select_universe.py) ever has ohlcv_daily rows to begin with, so
+  // filtering here up front avoids an empty round-trip query per
+  // untracked ticker_master row (~2,400+ of them) on every backtest run.
+  const conditions = [eq(tickerMaster.isTracked, true)];
   if (filters.market) conditions.push(eq(tickerMaster.market, filters.market));
   if (filters.minMarketCap !== undefined) conditions.push(gte(tickerMaster.marketCap, filters.minMarketCap));
   if (filters.maxMarketCap !== undefined) conditions.push(lte(tickerMaster.marketCap, filters.maxMarketCap));
