@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { FilterLink } from "@/components/filter-link";
+import { PageGuide } from "@/components/page-guide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -50,6 +51,20 @@ export default async function CounterfactualPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <h1 className="text-2xl font-semibold">반사실 시뮬레이터</h1>
+      <PageGuide>
+        <p>
+          &quot;반사실(反事實)&quot;은 &quot;실제로는 안 일어났지만 만약
+          이랬다면&quot;이라는 뜻입니다. 이미 지나간 내 거래 기록에{" "}
+          <b>&quot;만약 손절을 정확히 지켰다면&quot;</b>,{" "}
+          <b>&quot;만약 물타기를 안 했다면&quot;</b> 같은 가정을 적용해서
+          다시 계산해봅니다.
+        </p>
+        <p>
+          중요한 건 미래 정보를 몰래 쓰는 게 아니라, <b>그 당시 이미 스스로
+          세워뒀던 계획대로만 행동했다면</b> 어땠을지를 본다는 점입니다. 어떤
+          습관 하나를 고치면 가장 도움이 되는지 알 수 있습니다.
+        </p>
+      </PageGuide>
       <p className="text-sm text-muted-foreground">
         &ldquo;더 나은 종목&rdquo;이 아니라 &ldquo;더 나은 규칙 준수&rdquo;가
         결과를 얼마나 바꿨을지, 진입 시점에 이미 선언되어 있던 규칙만으로

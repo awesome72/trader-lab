@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FilterLink } from "@/components/filter-link";
+import { PageGuide } from "@/components/page-guide";
 import {
   Accordion,
   AccordionContent,
@@ -172,6 +173,20 @@ export default async function BiasPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <h1 className="text-2xl font-semibold">행동 편향 레이더</h1>
+      <PageGuide>
+        <p>
+          사람은 누구나 무의식적으로 특정 습관에 빠지기 쉽습니다. 예를 들어
+          이익은 조금만 나도 서둘러 팔면서 손실은 &quot;오르겠지&quot;하며
+          오래 쥐고 있거나(처분효과), 손실을 본 직후 화가 나서 계획에 없던
+          매매를 무리하게 시도하는(보복매매) 식입니다.
+        </p>
+        <p>
+          이 화면은 어떤 종목을 샀는지, 시장이 어땠는지와 전혀 상관없이{" "}
+          <b>오직 당신의 행동 패턴</b>만 숫자로 보여줍니다. 6축 레이더에서
+          중심(0)에 가까울수록 건강한 상태이고, 바깥쪽(100)에 가까울수록
+          그 습관이 강하게 나타난다는 뜻입니다.
+        </p>
+      </PageGuide>
       <p className="text-sm text-muted-foreground">
         아래 지표는 종목이나 시황과 무관하게, 오직 당신의 매매 기록에서만
         계산됩니다. 표본이 적을수록(현재 {closedCount}건) 추정치의 신뢰도는

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PageGuide } from "@/components/page-guide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOngoingExperiment } from "@/lib/queries/coach";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +25,20 @@ export default async function CoachPage() {
           않습니다 — 판단은 당신의 몫입니다.
         </p>
       </div>
+
+      <PageGuide>
+        <p>
+          &quot;소크라테스 코치&quot;라는 이름처럼, 답을 알려주는 대신 스스로
+          생각하게 만드는 질문을 던집니다. 저널 상세 화면에서는 진입 직후
+          (&quot;프리모템&quot;)나 청산 후(&quot;포스트모템&quot;)에 요청할
+          수 있고, 이 화면에서는 이번 주·이번 달 전체 흐름을 되짚어봅니다.
+        </p>
+        <p>
+          매번 &quot;다음 10거래 중 이렇게 해보자&quot;는 검증 가능한 실험을
+          하나씩 제안하는데, 그 실험을 실제로 얼마나 지켰는지가 아래
+          &quot;준수율&quot;로 표시됩니다.
+        </p>
+      </PageGuide>
 
       {experiment ? (
         <Card>

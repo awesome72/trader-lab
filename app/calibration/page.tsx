@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageGuide } from "@/components/page-guide";
 import { StatLabel } from "@/components/stat-label";
 import {
   brierScore,
@@ -60,6 +61,21 @@ export default async function CalibrationPage() {
           <Button render={<Link href="/calibration/quiz" />}>주간 예측 퀴즈</Button>
         </div>
       </div>
+
+      <PageGuide>
+        <p>
+          &quot;이 거래, 80% 확신한다&quot;고 말했다면, 실제로 그렇게 말한
+          거래들이 정말 80%쯤 성공했는지를 확인하는 화면입니다. 많은
+          사람들은 실제 적중률보다 스스로를 더 과신하는 경향이 있는데(과신
+          편향), 이걸 모르면 확신도에 따라 베팅 크기를 조절하는 전략 자체가
+          의미가 없어집니다.
+        </p>
+        <p>
+          아래 신뢰도 곡선에서 점들이 대각선(y=x)에 가까울수록 &quot;내가
+          말한 확신도를 그대로 믿을 수 있다&quot;는 뜻이고, 대각선 아래로
+          처지면 과신하는 편입니다.
+        </p>
+      </PageGuide>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card>

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { FilterLink } from "@/components/filter-link";
+import { PageGuide } from "@/components/page-guide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
@@ -66,6 +67,19 @@ export default async function MetricsPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <h1 className="text-2xl font-semibold">R-멀티플 대시보드</h1>
+      <PageGuide>
+        <p>
+          <b>R-multiple(R)</b>은 &quot;내가 감수하기로 한 손실 1번 분&quot;을
+          기준 단위로 삼는 방법입니다. 예를 들어 손절가에서 -100만원을 잃기로
+          정하고 실제로는 +200만원을 벌었다면 <b>+2R</b>입니다.
+        </p>
+        <p>
+          금액으로만 보면 계좌 크기나 종목 가격이 달라서 비교가 어렵지만, R로
+          바꾸면 &quot;나는 보통 얼마나 위험을 감수해서 얼마를 버는
+          사람인가&quot;를 매매 습관 자체로 비교할 수 있습니다. 아래 지표들은
+          모두 이 R을 기준으로 계산됩니다.
+        </p>
+      </PageGuide>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">기간:</span>

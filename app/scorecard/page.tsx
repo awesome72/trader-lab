@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { FilterLink } from "@/components/filter-link";
+import { PageGuide } from "@/components/page-guide";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -99,6 +100,21 @@ export default async function ScorecardPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <h1 className="text-2xl font-semibold">프로세스 스코어카드</h1>
+      <PageGuide>
+        <p>
+          이 화면의 핵심은 <b>&quot;결과가 좋았나&quot;가 아니라 &quot;과정이
+          좋았나&quot;</b>를 따로 채점하는 것입니다. 예를 들어 계획도 없이
+          충동적으로 샀는데 운 좋게 올랐다면 <b>&quot;행운&quot;</b>, 반대로
+          계획을 잘 지켰는데도 시장 상황 때문에 손실이 났다면{" "}
+          <b>&quot;불운&quot;</b>으로 분류합니다.
+        </p>
+        <p>
+          장기적으로 꾸준히 돈을 버는 사람은 결과가 아니라{" "}
+          <b>&quot;실력&quot;</b>(계획도 잘 지키고 결과도 좋은) 칸의 비중이
+          높은 사람입니다. 아래 산점도의 점을 클릭하면 그 거래의 저널로 바로
+          이동합니다.
+        </p>
+      </PageGuide>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">기간:</span>
