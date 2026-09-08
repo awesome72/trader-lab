@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatLabel } from "@/components/stat-label";
 import {
   brierScore,
   bucketize,
@@ -63,7 +64,9 @@ export default async function CalibrationPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-xs font-normal text-muted-foreground">Brier Score</CardTitle>
+            <CardTitle className="text-xs font-normal text-muted-foreground">
+              <StatLabel label="Brier Score" explain="예측한 확신도가 실제 결과와 얼마나 가까웠는지를 나타내는 오차 점수입니다. 0에 가까울수록 좋고, 아무 근거 없이 항상 50%라고 찍었을 때가 0.25입니다." />
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-xl font-semibold">
             {brier !== null ? brier.toFixed(3) : "—"}
@@ -72,7 +75,9 @@ export default async function CalibrationPage() {
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-xs font-normal text-muted-foreground">ECE</CardTitle>
+            <CardTitle className="text-xs font-normal text-muted-foreground">
+              <StatLabel label="ECE" explain="'70% 확신했던 예측들이 실제로 70%쯤 맞았는가'를 확신도 구간별로 확인해 평균낸 오차입니다. 0에 가까울수록 확신도를 있는 그대로 믿을 수 있다는 뜻입니다." />
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-xl font-semibold">{ece !== null ? ece.toFixed(3) : "—"}</CardContent>
         </Card>

@@ -13,6 +13,7 @@ import {
   expectancyOf,
   winRateOf,
 } from "@/lib/domain/metrics";
+import { StatLabel } from "@/components/stat-label";
 import { generateSampleTrades } from "@/lib/domain/sample-data";
 import type { SourceType } from "@/lib/domain/types";
 import { PERIOD_DAYS, getFilteredTrades } from "@/lib/queries/trades";
@@ -127,7 +128,9 @@ export default async function MetricsPage({
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-xs font-normal text-muted-foreground">기대값</CardTitle>
+            <CardTitle className="text-xs font-normal text-muted-foreground">
+              <StatLabel label="기대값" explain="거래 1건당 평균적으로 기대되는 손익(R 단위). 양수면 이 방식을 계속했을 때 장기적으로 수익이 난다는 뜻입니다." />
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-xl font-semibold">
             {fmtR(metrics.expectancy)}
@@ -140,7 +143,9 @@ export default async function MetricsPage({
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-xs font-normal text-muted-foreground">Profit Factor</CardTitle>
+            <CardTitle className="text-xs font-normal text-muted-foreground">
+              <StatLabel label="Profit Factor" explain="총 수익 ÷ 총 손실. 1보다 크면 벌어들인 돈이 잃은 돈보다 많다는 뜻입니다. 2 이상이면 안정적인 수준으로 봅니다." />
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-xl font-semibold">
             {metrics.profitFactor !== null ? metrics.profitFactor.toFixed(2) : "—"}
@@ -148,7 +153,9 @@ export default async function MetricsPage({
         </Card>
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-xs font-normal text-muted-foreground">SQN</CardTitle>
+            <CardTitle className="text-xs font-normal text-muted-foreground">
+              <StatLabel label="SQN" explain="시스템 퀄리티 넘버. 수익의 크기와 일관성(편차)을 함께 반영한 점수입니다. 대략 2 미만은 평범, 2~3은 양호, 3 이상은 우수한 편으로 봅니다." />
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-xl font-semibold">
             {metrics.sqn !== null ? metrics.sqn.toFixed(2) : "—"}
@@ -182,7 +189,9 @@ export default async function MetricsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>켈리 게이지</CardTitle>
+          <CardTitle>
+            <StatLabel label="켈리 게이지" explain="승률·손익비를 바탕으로 수학적으로 계산한 '이론상 최적 베팅 비율'입니다. 변동성이 커서 보통 이 값의 1/4(쿼터 켈리) 정도만 실제로 사용하길 권장합니다." />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <KellyGauge

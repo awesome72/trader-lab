@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ToastOnParam } from "@/components/toast-on-param";
 import { db } from "@/lib/db";
 import { tradeEvents, trades } from "@/lib/db/schema";
 import {
@@ -116,6 +117,12 @@ export default async function JournalDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <ToastOnParam
+        entries={[
+          { param: "created", type: "success", message: "저널이 저장되었습니다 (핵심 필드는 이제 수정할 수 없습니다)" },
+          { param: "closed", type: "success", message: "청산이 기록되었습니다" },
+        ]}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">

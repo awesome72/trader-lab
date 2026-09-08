@@ -10,19 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ToastOnParam } from "@/components/toast-on-param";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/login/actions";
 import { updateSettings } from "./actions";
 
-export default async function SettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
-}) {
-  const { saved, error } = await searchParams;
-
+export default async function SettingsPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,6 +34,12 @@ export default async function SettingsPage({
 
   return (
     <div className="mx-auto max-w-lg space-y-6 p-6">
+      <ToastOnParam
+        entries={[
+          { param: "saved", type: "success", message: "저장되었습니다" },
+          { param: "error", type: "error" },
+        ]}
+      />
       <Card>
         <CardHeader>
           <CardTitle>계좌 & 리스크 설정</CardTitle>
@@ -135,11 +136,6 @@ export default async function SettingsPage({
                 주간 요약 이메일 받기 (이번 주 프로세스 점수, 복습 대기 카드 수 등)
               </Label>
             </div>
-
-            {saved ? (
-              <p className="text-sm text-emerald-600">저장되었습니다.</p>
-            ) : null}
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <Button type="submit" className="w-full">
               저장

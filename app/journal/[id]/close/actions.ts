@@ -156,5 +156,5 @@ export async function closeTrade(
 
   revalidatePath("/journal");
   revalidatePath(`/journal/${tradeId}`);
-  redirect(`/journal/${tradeId}`);
+  redirect(`/journal/${tradeId}?closed=1`);
 }

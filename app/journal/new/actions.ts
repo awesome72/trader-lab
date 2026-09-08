@@ -72,5 +72,5 @@ export async function createTrade(
     .returning({ id: trades.id });
 
   revalidatePath("/journal");
-  redirect(`/journal/${inserted.id}`);
+  redirect(`/journal/${inserted.id}?created=1`);
 }

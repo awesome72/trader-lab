@@ -7,6 +7,7 @@ import {
   calcQuadrantDistribution,
   type ProcessScoreBreakdown,
 } from "@/lib/domain/process-score";
+import { StatLabel } from "@/components/stat-label";
 import { pearsonCorrelation } from "@/lib/domain/metrics";
 import { generateSampleTrades } from "@/lib/domain/sample-data";
 import type { Quadrant, SourceType } from "@/lib/domain/types";
@@ -164,17 +165,16 @@ export default async function ScorecardPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>상관 분석</CardTitle>
+            <CardTitle>
+              <StatLabel label="상관 분석" explain="프로세스 점수(과정)와 실현 R(결과)이 실제로 함께 움직이는지를 -1~1 사이 숫자로 나타냅니다. 1에 가까울수록 '프로세스를 잘 지킨 거래가 실제로도 좋은 결과로 이어졌다'는 뜻이고, 0에 가까우면 아직 둘이 무관합니다." />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              프로세스 점수와 실현 R의 피어슨 상관계수:{" "}
+              프로세스 점수와 실현 R의 상관계수:{" "}
               <span className="font-semibold">
                 {correlation !== null ? correlation.toFixed(2) : "표본 부족"}
               </span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              r = Σ(x-x̄)(y-ȳ) / √(Σ(x-x̄)²·Σ(y-ȳ)²)
             </p>
             {correlation !== null && correlation >= 0.3 ? (
               <p className="text-emerald-600">

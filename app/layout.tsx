@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,11 +28,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <div className="flex flex-1 flex-col">{children}</div>
-        <footer className="border-t px-6 py-3 text-center text-xs text-muted-foreground">
-          본 서비스는 투자 교육 및 자기 훈련 도구이며, 투자자문·투자권유가
-          아닙니다. 모든 투자 판단과 그 결과는 이용자 본인에게 귀속됩니다.
-        </footer>
+        <TooltipProvider delay={200}>
+          <div className="flex flex-1 flex-col">{children}</div>
+          <footer className="border-t px-6 py-3 text-center text-xs text-muted-foreground">
+            본 서비스는 투자 교육 및 자기 훈련 도구이며, 투자자문·투자권유가
+            아닙니다. 모든 투자 판단과 그 결과는 이용자 본인에게 귀속됩니다.
+          </footer>
+          <Toaster position="top-center" />
+        </TooltipProvider>
       </body>
     </html>
   );
