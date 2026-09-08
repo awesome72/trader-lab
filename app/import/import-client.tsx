@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -94,6 +95,8 @@ export function ImportClient() {
     const res = await importTrades(mappedRows);
     setResult(res);
     setImporting(false);
+    if (res.imported > 0) toast.success(`${res.imported}건 임포트 완료`);
+    if (res.errors.length > 0) toast.error(`${res.errors.length}건은 건너뛰었습니다`);
   }
 
   return (

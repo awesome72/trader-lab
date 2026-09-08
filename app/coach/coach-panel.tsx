@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,9 +22,11 @@ function QuestionAnswer({ tradeId, question }: { tradeId: string; question: stri
     setSaving(false);
     if (!result.ok) {
       setError(result.error);
+      toast.error(result.error);
       return;
     }
     setSaved(true);
+    toast.success("저장되었습니다");
   }
 
   return (

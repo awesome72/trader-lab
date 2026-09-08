@@ -79,7 +79,7 @@ export function OnboardingQuiz() {
 
   async function finish() {
     await completeOnboarding();
-    router.push("/");
+    router.push("/?onboarded=1");
   }
 
   if (phase === "idle" || phase === "loading") {

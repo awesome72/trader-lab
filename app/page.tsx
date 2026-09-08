@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ToastOnParam } from "@/components/toast-on-param";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calcBiasRadar, deriveFomoPriceContextFromTags, type BiasRadar } from "@/lib/domain/bias-metrics";
@@ -70,6 +71,11 @@ export default async function Home() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
+      <ToastOnParam
+        entries={[
+          { param: "onboarded", type: "success", message: "온보딩을 완료했습니다! 이제 실제 저널을 작성해보세요." },
+        ]}
+      />
       {!onboarding.completed ? (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex items-center justify-between pt-6">
