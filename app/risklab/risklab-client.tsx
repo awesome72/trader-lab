@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,17 @@ import {
   compareRiskLevels,
   type RiskLevelComparison,
 } from "@/lib/domain/monte-carlo";
-import { DrawdownHistogram, FinalReturnHistogram } from "./charts";
+
+// recharts (pulled in by ./charts) only needs to load once a simulation
+// actually produces results, not on first paint of the input form.
+const DrawdownHistogram = dynamic(() => import("./charts").then((m) => m.DrawdownHistogram), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-md bg-muted" />,
+});
+const FinalReturnHistogram = dynamic(() => import("./charts").then((m) => m.FinalReturnHistogram), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-md bg-muted" />,
+});
 
 const RISK_LEVELS = [0.5, 1, 2, 3, 5];
 

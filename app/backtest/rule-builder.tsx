@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,15 @@ import {
 } from "@/components/ui/select";
 import type { MetricsResult } from "@/lib/domain/metrics";
 import { ConditionRow, makeConditionRow, rowToCondition, type ConditionRowState } from "./condition-row";
-import { EquityCurveChart, type BacktestTradeLite } from "./charts";
+import type { BacktestTradeLite } from "./charts";
+
+// recharts (pulled in by ./charts) only needs to load once a run actually
+// produces a result, not on first paint of the rule builder — keeps the
+// initial bundle for this page smaller.
+const EquityCurveChart = dynamic(() => import("./charts").then((m) => m.EquityCurveChart), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-md bg-muted" />,
+});
 
 interface RunResponse {
   ruleSetId: string;
