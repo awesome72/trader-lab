@@ -90,13 +90,24 @@ export async function createQuizSession(userId: string, count = 20): Promise<Qui
   const candidates: { ticker: string; startIdx: number }[] = [];
   const rowsByTicker = new Map<string, (typeof ohlcvDaily.$inferSelect)[]>();
 
-  for (const t of tickers) {
-    const rows = await db
+  if (tickers.length > 0) {
+    // One query instead of one per ticker (previously up to ~325 round
+    // trips for the tracked universe) — grouped by ticker in JS below.
+    const allRows = await db
       .select()
       .from(ohlcvDaily)
-      .where(eq(ohlcvDaily.ticker, t.ticker))
-      .orderBy(asc(ohlcvDaily.d));
-    rowsByTicker.set(t.ticker, rows);
+      .where(inArray(ohlcvDaily.ticker, tickers.map((t) => t.ticker)))
+      .orderBy(asc(ohlcvDaily.ticker), asc(ohlcvDaily.d));
+
+    for (const row of allRows) {
+      const list = rowsByTicker.get(row.ticker);
+      if (list) list.push(row);
+      else rowsByTicker.set(row.ticker, [row]);
+    }
+  }
+
+  for (const t of tickers) {
+    const rows = rowsByTicker.get(t.ticker) ?? [];
     const maxStart = rows.length - WINDOW_SIZE - HORIZON_DAYS;
     for (let start = 0; start < maxStart; start++) {
       candidates.push({ ticker: t.ticker, startIdx: start });

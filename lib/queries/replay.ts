@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { dbTradeToDomain } from "@/lib/db/mappers";
 import { ohlcvDaily, profiles, replaySessions, tickerMaster, trades } from "@/lib/db/schema";
@@ -65,20 +65,28 @@ async function findReplayCandidates(
     .select({ ticker: tickerMaster.ticker })
     .from(tickerMaster)
     .where(and(...conditions));
+  if (tickers.length === 0) return { candidates: [], datesByTicker: new Map() };
+
+  const tickerCodes = tickers.map((t) => t.ticker);
+
+  // One query instead of one per ticker (previously up to ~325 round
+  // trips for the tracked universe) — grouped by ticker in JS below.
+  const allDates = await db
+    .select({ ticker: ohlcvDaily.ticker, d: ohlcvDaily.d })
+    .from(ohlcvDaily)
+    .where(inArray(ohlcvDaily.ticker, tickerCodes))
+    .orderBy(asc(ohlcvDaily.ticker), asc(ohlcvDaily.d));
 
   const datesByTicker = new Map<string, string[]>();
+  for (const row of allDates) {
+    const list = datesByTicker.get(row.ticker);
+    if (list) list.push(row.d);
+    else datesByTicker.set(row.ticker, [row.d]);
+  }
+
   const candidates: ReplayCandidate[] = [];
-
   for (const { ticker } of tickers) {
-    const rows = await db
-      .select({ d: ohlcvDaily.d })
-      .from(ohlcvDaily)
-      .where(eq(ohlcvDaily.ticker, ticker))
-      .orderBy(asc(ohlcvDaily.d));
-
-    const dates = rows.map((r) => r.d);
-    datesByTicker.set(ticker, dates);
-
+    const dates = datesByTicker.get(ticker) ?? [];
     for (let i = 0; i < dates.length; i++) {
       const availableBars = dates.length - i;
       if (availableBars >= minBars) {

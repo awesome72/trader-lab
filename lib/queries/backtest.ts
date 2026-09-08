@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { backtestRuns, investorFlow, ohlcvDaily, ruleSets, tickerMaster } from "@/lib/db/schema";
 import type { TickerUniverseEntry } from "@/lib/domain/backtest";
@@ -28,22 +28,47 @@ export async function getUniverseBars(filters: UniverseFilters): Promise<TickerU
     .select()
     .from(tickerMaster)
     .where(conditions.length > 0 ? and(...conditions) : undefined);
+  if (tickers.length === 0) return [];
+
+  const tickerCodes = tickers.map((t) => t.ticker);
+
+  // Two queries total instead of two per ticker (previously up to ~325
+  // round trips for the tracked universe) — grouped by ticker in JS below.
+  const [allBars, allFlow] = await Promise.all([
+    db
+      .select()
+      .from(ohlcvDaily)
+      .where(inArray(ohlcvDaily.ticker, tickerCodes))
+      .orderBy(asc(ohlcvDaily.ticker), asc(ohlcvDaily.d)),
+    db
+      .select()
+      .from(investorFlow)
+      .where(inArray(investorFlow.ticker, tickerCodes))
+      .orderBy(asc(investorFlow.ticker), asc(investorFlow.d)),
+  ]);
+
+  const barsByTicker = new Map<string, typeof allBars>();
+  for (const bar of allBars) {
+    const list = barsByTicker.get(bar.ticker);
+    if (list) list.push(bar);
+    else barsByTicker.set(bar.ticker, [bar]);
+  }
+
+  const flowByTicker = new Map<string, Map<string, number>>();
+  for (const flow of allFlow) {
+    let byDate = flowByTicker.get(flow.ticker);
+    if (!byDate) {
+      byDate = new Map();
+      flowByTicker.set(flow.ticker, byDate);
+    }
+    byDate.set(flow.d, flow.foreignNet ?? 0);
+  }
 
   const entries: TickerUniverseEntry[] = [];
   for (const t of tickers) {
-    const rows = await db
-      .select()
-      .from(ohlcvDaily)
-      .where(eq(ohlcvDaily.ticker, t.ticker))
-      .orderBy(asc(ohlcvDaily.d));
-    if (rows.length === 0) continue;
-
-    const flowRows = await db
-      .select()
-      .from(investorFlow)
-      .where(eq(investorFlow.ticker, t.ticker))
-      .orderBy(asc(investorFlow.d));
-    const flowByDate = new Map(flowRows.map((f) => [f.d, f.foreignNet ?? 0]));
+    const rows = barsByTicker.get(t.ticker);
+    if (!rows || rows.length === 0) continue;
+    const flowByDate = flowByTicker.get(t.ticker) ?? new Map<string, number>();
 
     entries.push({
       ticker: t.ticker,
