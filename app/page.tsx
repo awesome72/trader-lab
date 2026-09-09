@@ -22,7 +22,6 @@ const AXIS_LABELS: Record<keyof BiasRadar, string> = {
 };
 
 const QUICK_LINKS: { href: string; label: string }[] = [
-  { href: "/guide", label: "사용 흐름 보기" },
   { href: "/journal", label: "저널" },
   { href: "/scorecard", label: "스코어카드" },
   { href: "/metrics", label: "R-멀티플" },
@@ -77,6 +76,16 @@ export default async function Home() {
           { param: "onboarded", type: "success", message: "온보딩을 완료했습니다! 이제 실제 저널을 작성해보세요." },
         ]}
       />
+
+      <div className="flex justify-end">
+        <Link
+          href="/guide"
+          className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          이 화면 사용법 알아보기 →
+        </Link>
+      </div>
+
       {!onboarding.completed ? (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex items-center justify-between pt-6">
